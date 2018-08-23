@@ -132,69 +132,103 @@ public class IdxAuthRequestNode extends AbstractDecisionNode {
       }
       return goTo(false).build();
 */
-      //Idx code to call the new methods below
-/*
-          TenantRepoFactory tenantRepoFactory = null;
-    		try {
-    				InputStream keyStore = new FileInputStream(new File("IdentityXKeyWrapper.jks"));
-    				InputStream credenitalsProperties = new FileInputStream(new File("credental.properties"));
-    			EncryptedKeyPropFileCredentialsProvider provider = new EncryptedKeyPropFileCredentialsProvider(
-    					keyStore,
-    					"password",
-    					credenitalsProperties,
-    					"identityxCert",
-    					"password");
-    			tenantRepoFactory = new TenantRepoFactory(provider);
 
-    			System.out.println("Connected to the IdentityX Server");
-          debug.message("Connected to Idx server");
+        TenantRepoFactory tenantRepoFactory = null;
+		try {
+				InputStream keyStore = new FileInputStream(new File("home/ubuntu/tomcat/daonconfig/IdentityXKeyWrapper.jks"));
+				InputStream credenitalsProperties = new FileInputStream(new File("home/ubuntu/tomcat/daonconfig/credential.properties"));
+			EncryptedKeyPropFileCredentialsProvider provider = new EncryptedKeyPropFileCredentialsProvider(
+					keyStore,
+					"password",
+					credenitalsProperties,
+					"identityxCert",
+					"password");
+			tenantRepoFactory = new TenantRepoFactory(provider);
 
-    		} catch (Exception e) {
-    			System.out.println("An exception occurred connecting to the IX Server");
+			System.out.println("Connected to the IdentityX Server");
+      logger.error("Connected to the IdentityX Server");
+		} catch (Exception ex) {
+			System.out.println("An exception occurred connecting to the IX Server");
+      logger.error("An exception occurred connecting to the IX Server: " + ex );
+		}
 
-          debug.error("[" + DEBUG_FILE + "]: " + "An exception occurred connecting to the IX Server ", e);
-    		}
+		String authHref = generateAuthenticationRequest(username, "login", tenantRepoFactory);
 
-       try {
-         //String authHref = generateAuthenticationRequest(username, "login", tenantRepoFactory);
-       } catch (Exception e) {
-         debug.error("[" + DEBUG_FILE + "]: " + "Error generating transaction ", e);
-
-       }
+		logger.error(authHref);
+    //now I need to return this authHref to a polling node so it can call my
+    //idxAuthStatusNode to check the status
 
 
+			return goTo(true).replaceSharedState(context.sharedState.copy().put(USERNAME, username)).build();
 
-*/
-
-
-//simple test to call private method
-        if (testPassword(password)) {
-          return goTo(true).replaceSharedState(context.sharedState.copy().put(USERNAME, username)).build();
-        } else {
-          return goTo(false).build();
-        }
 
     }
 
 
+  private String generateAuthenticationRequest(String userId, String policyName, TenantRepoFactory tenantRepoFactory)
+	{
+		try {
+			AuthenticationRequest request = new AuthenticationRequest();
+			if ((userId != null) && (userId.length() > 0))
+			{
+				User user;
+				user = this.findUser(userId, tenantRepoFactory);
+				if (user == null) {
+					System.out.println("Error retrieving user");
+				}
+				else
+				{
+					System.out.println("User found with ID " + userId);
+					request.setUser(user);
+				}
+			}
 
-//This code works!
-	private boolean testPassword(String pass) throws NodeProcessException {
+			PolicyQueryHolder holder = new PolicyQueryHolder();
+			holder.getSearchSpec().setPolicyId(policyName);
+			holder.getSearchSpec().setStatus(PolicyStatusEnum.ACTIVE);
+			PolicyRepository policyRepo = tenantRepoFactory.getPolicyRepo();
+			PolicyCollection policyCollection = policyRepo.list(holder);
+			if(policyCollection.getItems().length > 0)
+			{
+				System.out.println("SETTING POLICY on AUTHENTICATON REQUEST");
+				request.setPolicy(policyCollection.getItems()[0]);
+			}
+			else
+			{
+				System.out.println("Could not find an active policy with the PolicyId: " + policyName);
+			}
 
-        String mySecret = "jbtest";
 
-        if (pass.equals(mySecret)) {
-            return true;
-        } else {
-          logger.error("Password is not correct. Try jbtest");
-          throw new NodeProcessException("Unable to authenticate");
-        }
+			ApplicationRepository applicationRepo = tenantRepoFactory.getApplicationRepo();
+			ApplicationQueryHolder applicationQueryHolder = new ApplicationQueryHolder();
+			applicationQueryHolder.getSearchSpec().setApplicationId("daonbank");
+			ApplicationCollection applicationCollection = applicationRepo.list(applicationQueryHolder);
 
-
+			if(applicationCollection.getItems().length > 0)
+			{
+				request.setApplication(applicationCollection.getItems()[0]);
+			}
+			else
+			{
+				System.out.println("No Application was found with this name " + "daonbank");
+			}
+			request.setDescription("OpenAM has Requested an Authentication.");
+			request.setType("IX");
+			request.setAuthenticationRequestId(UUID.randomUUID().toString());
+			request.setPushNotificationType(TransactionPushNotificationTypeEnum.VERIFY_WITH_CONFIRMATION);
+			AuthenticationRequestRepository authenticationRequestRepo = tenantRepoFactory.getAuthenticationRequestRepo();
+			request = authenticationRequestRepo.create(request);
+			System.out.println("Added an authentication request, - authRequestId: {}" + request.getId());
+      logger.error("Added an authentication request, - authRequestId: {}" + request.getId());
+			return request.getHref();
+		} catch (IdxRestException ex) {
+			System.out.println("An exception occurred while attempting to create an authentication request.  Exception: " + ex.getMessage());
+      logger.error("An exception occurred while attempting to create an authentication request.");
+		}
+		return null;
 	}
 
-
-  private User findUser(String userId, TenantRepoFactory tenantRepoFactory) throws NodeProcessException {
+  private User findUser(String userId, TenantRepoFactory tenantRepoFactory) {
 
 		UserRepository userRepo = tenantRepoFactory.getUserRepo();
 		UserQueryHolder holder = new UserQueryHolder();
@@ -214,7 +248,8 @@ public class IdxAuthRequestNode extends AbstractDecisionNode {
   		case 1:
   			return userCollection.getItems()[0];
   		default:
-  			throw new NodeProcessException("More than one user with the same UserId!!!!");
+  			logger.error("More than one user with the same UserId!!!!");
+        return null;
   		}
 
     } catch (IdxRestException e) {
