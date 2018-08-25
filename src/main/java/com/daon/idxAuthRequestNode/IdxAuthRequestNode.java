@@ -50,6 +50,7 @@ import com.sun.identity.shared.debug.Debug;
 import org.forgerock.openam.annotations.sm.Attribute;
 import org.forgerock.openam.auth.node.api.*;
 import org.forgerock.openam.core.CoreWrapper;
+import org.forgerock.json.JsonValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,35 +69,24 @@ import static org.forgerock.openam.auth.node.api.SharedStateConstants.USERNAME;
  * A node that checks to see if zero-page login headers have specified username and shared key
  * for this request.
  */
-@Node.Metadata(outcomeProvider  = AbstractDecisionNode.OutcomeProvider.class,
+@Node.Metadata(outcomeProvider  = SingleOutcomeNode.OutcomeProvider.class,
                configClass      = IdxAuthRequestNode.Config.class)
-public class IdxAuthRequestNode extends AbstractDecisionNode {
+public class IdxAuthRequestNode extends SingleOutcomeNode {
 
     private final Config config;
     private final CoreWrapper coreWrapper;
-    private final static String DEBUG_FILE = "IdxAuthRequestNode";
-    protected Debug debug = Debug.getInstance(DEBUG_FILE);
+    //private final static String DEBUG_FILE = "IdxAuthRequestNode";
+    //protected Debug debug = Debug.getInstance(DEBUG_FILE);
 
     private final Logger logger = LoggerFactory.getLogger("amAuth");
+
+    private final String IDX_HREF_KEY = "idx-auth-ref-shared-state-key";
 
     /**
      * Configuration for the node.
      */
     public interface Config {
-        @Attribute(order = 100)
-        default String usernameHeader() {
-            return "X-OpenAM-Username";
-        }
 
-        @Attribute(order = 200)
-        default String passwordHeader() {
-            return "X-OpenAM-Password";
-        }
-
-        @Attribute(order = 300)
-        default String secretKey() {
-            return "secretKey";
-        }
     }
 
 
@@ -113,25 +103,11 @@ public class IdxAuthRequestNode extends AbstractDecisionNode {
 
     @Override
     public Action process(TreeContext context) throws NodeProcessException {
-      String secret = config.secretKey();
-      String password = context.transientState.get(SharedStateConstants.PASSWORD).asString();
+
       String username = context.sharedState.get(SharedStateConstants.USERNAME).asString();
       AMIdentity userIdentity = coreWrapper.getIdentity(username, context.sharedState.get(REALM).asString());
 
-/*  Original working simple code
- *** This simply checks the username is active and checks the password against the configured value for secretKey
 
-      try {
-          if (secret.equals(password) && userIdentity != null && userIdentity.isExists() && userIdentity.isActive()) {
-              return goTo(true).replaceSharedState(context.sharedState.copy().put(USERNAME, username)).build();
-          }
-      } catch (IdRepoException e) {
-          debug.error("[" + DEBUG_FILE + "]: " + "Error locating user '{}' ", e);
-      } catch (SSOException e) {
-          debug.error("[" + DEBUG_FILE + "]: " + "Error locating user '{}' ", e);
-      }
-      return goTo(false).build();
-*/
 
         TenantRepoFactory tenantRepoFactory = null;
 		try {
@@ -146,22 +122,20 @@ public class IdxAuthRequestNode extends AbstractDecisionNode {
 			tenantRepoFactory = new TenantRepoFactory(provider);
 
 			System.out.println("Connected to the IdentityX Server");
-      logger.error("Connected to the IdentityX Server");
+      logger.debug("Connected to the IdentityX Server");
 		} catch (Exception ex) {
 			System.out.println("An exception occurred connecting to the IX Server");
-      logger.error("An exception occurred connecting to the IX Server: " + ex );
+      logger.debug("An exception occurred connecting to the IX Server: " + ex );
 		}
 
 		String authHref = generateAuthenticationRequest(username, "login", tenantRepoFactory);
+		logger.debug("Auth href: " + authHref);
 
-		logger.error(authHref);
-    //now I need to return this authHref to a polling node so it can call my
-    //idxAuthStatusNode to check the status
+    //Place the href value in sharedState
+    logger.debug("Setting auth URL in shared state...");
+    JsonValue newState = context.sharedState.copy().put(IDX_HREF_KEY, authHref);
 
-
-			return goTo(true).replaceSharedState(context.sharedState.copy().put(USERNAME, username)).build();
-
-
+    return goToNext().replaceSharedState(newState).build();
     }
 
 
@@ -174,11 +148,11 @@ public class IdxAuthRequestNode extends AbstractDecisionNode {
 				User user;
 				user = this.findUser(userId, tenantRepoFactory);
 				if (user == null) {
-					System.out.println("Error retrieving user");
+          logger.error("Error retrieving user");
 				}
 				else
 				{
-					System.out.println("User found with ID " + userId);
+          logger.debug("User found with ID " + userId);
 					request.setUser(user);
 				}
 			}
@@ -190,12 +164,12 @@ public class IdxAuthRequestNode extends AbstractDecisionNode {
 			PolicyCollection policyCollection = policyRepo.list(holder);
 			if(policyCollection.getItems().length > 0)
 			{
-				System.out.println("SETTING POLICY on AUTHENTICATON REQUEST");
+				logger.debug("SETTING POLICY on AUTHENTICATON REQUEST");
 				request.setPolicy(policyCollection.getItems()[0]);
 			}
 			else
 			{
-				System.out.println("Could not find an active policy with the PolicyId: " + policyName);
+				logger.debug("Could not find an active policy with the PolicyId: " + policyName);
 			}
 
 
@@ -210,7 +184,7 @@ public class IdxAuthRequestNode extends AbstractDecisionNode {
 			}
 			else
 			{
-				System.out.println("No Application was found with this name " + "daonbank");
+				logger.debug("No Application was found with this name " + "daonbank");
 			}
 			request.setDescription("OpenAM has Requested an Authentication.");
 			request.setType("IX");
@@ -218,12 +192,11 @@ public class IdxAuthRequestNode extends AbstractDecisionNode {
 			request.setPushNotificationType(TransactionPushNotificationTypeEnum.VERIFY_WITH_CONFIRMATION);
 			AuthenticationRequestRepository authenticationRequestRepo = tenantRepoFactory.getAuthenticationRequestRepo();
 			request = authenticationRequestRepo.create(request);
-			System.out.println("Added an authentication request, - authRequestId: {}" + request.getId());
+
       logger.error("Added an authentication request, - authRequestId: {}" + request.getId());
 			return request.getHref();
 		} catch (IdxRestException ex) {
-			System.out.println("An exception occurred while attempting to create an authentication request.  Exception: " + ex.getMessage());
-      logger.error("An exception occurred while attempting to create an authentication request.");
+      logger.error("An exception occurred while attempting to create an authentication request. Exception: " + ex.getMessage());
 		}
 		return null;
 	}
@@ -248,7 +221,7 @@ public class IdxAuthRequestNode extends AbstractDecisionNode {
   		case 1:
   			return userCollection.getItems()[0];
   		default:
-  			logger.error("More than one user with the same UserId!!!!");
+  			logger.debug("More than one user with the same UserId!!!!");
         return null;
   		}
 
