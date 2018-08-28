@@ -17,17 +17,13 @@
 
 package com.daon.idxAuthRequestNode;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.UUID;
+import static org.forgerock.openam.auth.node.api.SharedStateConstants.REALM;
 
-//import com.daon.identityx.fido.IdentityXServices;
 import com.daon.identityx.rest.model.def.PolicyStatusEnum;
 import com.daon.identityx.rest.model.def.TransactionPushNotificationTypeEnum;
 import com.daon.identityx.rest.model.pojo.AuthenticationRequest;
 import com.daon.identityx.rest.model.pojo.User;
-
+import com.google.inject.assistedinject.Assisted;
 import com.identityx.clientSDK.TenantRepoFactory;
 import com.identityx.clientSDK.collections.ApplicationCollection;
 import com.identityx.clientSDK.collections.PolicyCollection;
@@ -41,29 +37,19 @@ import com.identityx.clientSDK.repositories.ApplicationRepository;
 import com.identityx.clientSDK.repositories.AuthenticationRequestRepository;
 import com.identityx.clientSDK.repositories.PolicyRepository;
 import com.identityx.clientSDK.repositories.UserRepository;
-
-import com.google.inject.assistedinject.Assisted;
-import com.iplanet.sso.SSOException;
 import com.sun.identity.idm.AMIdentity;
-import com.sun.identity.idm.IdRepoException;
-import com.sun.identity.shared.debug.Debug;
-import org.forgerock.openam.annotations.sm.Attribute;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.UUID;
+import javax.inject.Inject;
+import org.forgerock.json.JsonValue;
 import org.forgerock.openam.auth.node.api.*;
 import org.forgerock.openam.core.CoreWrapper;
-import org.forgerock.json.JsonValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sun.identity.authentication.spi.AuthLoginException;
-import com.sun.identity.authentication.spi.InvalidPasswordException;
-import com.sun.identity.idm.AMIdentityRepository;
-import com.sun.identity.idm.IdRepoException;
-
-
-import javax.inject.Inject;
-
-import static org.forgerock.openam.auth.node.api.SharedStateConstants.REALM;
-import static org.forgerock.openam.auth.node.api.SharedStateConstants.USERNAME;
+//import com.daon.identityx.fido.IdentityXServices;
 
 /**
  * A node that checks to see if zero-page login headers have specified username and shared key
@@ -93,10 +79,9 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
     /**
      * Create the node.
      * @param config The service config.
-     * @throws NodeProcessException If the configuration was not valid.
-     */
+	 */
     @Inject
-    public IdxAuthRequestNode(@Assisted Config config, CoreWrapper coreWrapper) throws NodeProcessException {
+    public IdxAuthRequestNode(@Assisted Config config, CoreWrapper coreWrapper) {
         this.config = config;
         this.coreWrapper = coreWrapper;
     }

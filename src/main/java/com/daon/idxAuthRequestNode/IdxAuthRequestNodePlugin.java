@@ -16,17 +16,12 @@
 
 package com.daon.idxAuthRequestNode;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
-
-import javax.inject.Inject;
-
 import org.forgerock.openam.auth.node.api.AbstractNodeAmPlugin;
 import org.forgerock.openam.auth.node.api.Node;
 import org.forgerock.openam.plugins.PluginException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**
@@ -73,7 +68,7 @@ public class IdxAuthRequestNodePlugin extends AbstractNodeAmPlugin {
 	@Override
 	protected Map<String, Iterable<? extends Class<? extends Node>>> getNodesByVersion() {
 		return Collections.singletonMap(IdxAuthRequestNodePlugin.currentVersion, 
-				Collections.singletonList(IdxAuthRequestNode.class));
+				Arrays.asList(IdxAuthRequestNode.class, IdxAuthStatusNode.class));
 	}
 
     /** 
@@ -93,8 +88,7 @@ public class IdxAuthRequestNodePlugin extends AbstractNodeAmPlugin {
      * 
      * No need to implement this unless your AuthNode has specific requirements on startup.
      *
-     * @param startupType The type of startup that is taking place.
-     */
+	 */
 	@Override
 	public void onStartup() throws PluginException {
 		super.onStartup();
