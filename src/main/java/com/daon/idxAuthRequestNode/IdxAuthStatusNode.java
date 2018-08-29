@@ -51,11 +51,10 @@ import org.slf4j.LoggerFactory;
                configClass      = IdxAuthStatusNode.Config.class)
 public class IdxAuthStatusNode implements Node {
 
-  private static final String PENDING = "Pending";
-  private static final String SUCCESS = "Success";
-  private static final String FAILED = "Failed";
-  private static final String EXPIRED = "Expired";
-  //private static final String BUNDLE = IdxAuthStatusNode.class.getName().replace(".", "/");
+    private static final String PENDING = "Pending";
+    private static final String SUCCESS = "Success";
+    private static final String FAILED = "Failed";
+    private static final String EXPIRED = "Expired";
 
     private final Config config;
     private final CoreWrapper coreWrapper;

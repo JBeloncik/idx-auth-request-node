@@ -52,8 +52,7 @@ import org.slf4j.LoggerFactory;
 //import com.daon.identityx.fido.IdentityXServices;
 
 /**
- * A node that checks to see if zero-page login headers have specified username and shared key
- * for this request.
+ * A node that initiates an authentication request to IdentityX
  */
 @Node.Metadata(outcomeProvider  = SingleOutcomeNode.OutcomeProvider.class,
                configClass      = IdxAuthRequestNode.Config.class)
@@ -61,8 +60,6 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
 
     private final Config config;
     private final CoreWrapper coreWrapper;
-    //private final static String DEBUG_FILE = "IdxAuthRequestNode";
-    //protected Debug debug = Debug.getInstance(DEBUG_FILE);
 
     private final Logger logger = LoggerFactory.getLogger("amAuth");
 
@@ -92,35 +89,37 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
       String username = context.sharedState.get(SharedStateConstants.USERNAME).asString();
       AMIdentity userIdentity = coreWrapper.getIdentity(username, context.sharedState.get(REALM).asString());
 
+      //TODO: validate the username in AM before moving on
+		//will want to call the isActive method
+		//if not active, direct user to a registration page of some kind
+
 
 
         TenantRepoFactory tenantRepoFactory = null;
 		try {
 				InputStream keyStore = new FileInputStream(new File("home/ubuntu/tomcat/daonconfig/IdentityXKeyWrapper.jks"));
-				InputStream credenitalsProperties = new FileInputStream(new File("home/ubuntu/tomcat/daonconfig/credential.properties"));
+				InputStream credentialsProperties = new FileInputStream(new File("home/ubuntu/tomcat/daonconfig/credential.properties"));
 			EncryptedKeyPropFileCredentialsProvider provider = new EncryptedKeyPropFileCredentialsProvider(
 					keyStore,
 					"password",
-					credenitalsProperties,
+					credentialsProperties,
 					"identityxCert",
 					"password");
 			tenantRepoFactory = new TenantRepoFactory(provider);
 
-			System.out.println("Connected to the IdentityX Server");
-      logger.debug("Connected to the IdentityX Server");
+      		logger.debug("Connected to the IdentityX Server");
 		} catch (Exception ex) {
-			System.out.println("An exception occurred connecting to the IX Server");
-      logger.debug("An exception occurred connecting to the IX Server: " + ex );
+      		logger.debug("An exception occurred connecting to the IX Server: " + ex );
 		}
 
 		String authHref = generateAuthenticationRequest(username, "login", tenantRepoFactory);
 		logger.debug("Auth href: " + authHref);
 
-    //Place the href value in sharedState
-    logger.debug("Setting auth URL in shared state...");
-    JsonValue newState = context.sharedState.copy().put(IDX_HREF_KEY, authHref);
+    	//Place the href value in sharedState
+    	logger.debug("Setting auth URL in shared state...");
+    	JsonValue newState = context.sharedState.copy().put(IDX_HREF_KEY, authHref);
 
-    return goToNext().replaceSharedState(newState).build();
+    	return goToNext().replaceSharedState(newState).build();
     }
 
 
@@ -133,11 +132,11 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
 				User user;
 				user = this.findUser(userId, tenantRepoFactory);
 				if (user == null) {
-          logger.error("Error retrieving user");
+          			logger.error("Error retrieving user");
 				}
 				else
 				{
-          logger.debug("User found with ID " + userId);
+          			logger.debug("User found with ID " + userId);
 					request.setUser(user);
 				}
 			}
@@ -211,7 +210,7 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
   		}
 
     } catch (IdxRestException e) {
-      logger.error("exception getting user collection");
+      logger.error("exception getting user collection. " + e);
     }
 
     return null;
