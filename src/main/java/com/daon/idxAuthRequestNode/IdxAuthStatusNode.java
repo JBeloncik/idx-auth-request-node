@@ -56,6 +56,7 @@ public class IdxAuthStatusNode implements Node {
      */
     interface Config {
 
+
     }
 
 
@@ -71,16 +72,51 @@ public class IdxAuthStatusNode implements Node {
         String username = context.sharedState.get(SharedStateConstants.USERNAME).asString();
         TenantRepoFactory tenantRepoFactory = null;
         try {
-            InputStream keyStore = new FileInputStream(new File("home/ubuntu/tomcat/daonconfig/IdentityXKeyWrapper" +
-                     ".jks"));
-            InputStream credenitalsProperties = new FileInputStream(new File
-                     ("home/ubuntu/tomcat/daonconfig/credential.properties"));
-             EncryptedKeyPropFileCredentialsProvider provider = new EncryptedKeyPropFileCredentialsProvider(keyStore,
-                     "password", credenitalsProperties, "identityxCert", "password");
+            //InputStream keyStore = new FileInputStream(new File("home/ubuntu/tomcat/daonconfig/IdentityXKeyWrapper" +
+            //         ".jks"));
+            //InputStream credenitalsProperties = new FileInputStream(new File
+            //         ("home/ubuntu/tomcat/daonconfig/credential.properties"));
+             //EncryptedKeyPropFileCredentialsProvider provider = new EncryptedKeyPropFileCredentialsProvider(keyStore,
+             //        "password", credenitalsProperties, "identityxCert", "password");
+
+            //Pull these config values from SharedState. They should have been set by the IdxCheckEnrollmentStatus node
+            String pathToKeyStore = context.sharedState.get("IdxPathToKeyStore").asString();
+            if (pathToKeyStore == null) {
+                logger.error("Error: Path to JKS KeyStore not found in SharedState!");
+                throw new NodeProcessException("Path to JKS KeyStore not found!");
+            }
+            InputStream keyStore = new FileInputStream(new File(pathToKeyStore));
+
+            String pathToCredentialProperties = context.sharedState.get("IdxPathToCredentialProperties").asString();
+            if (pathToCredentialProperties == null) {
+                logger.error("Error: Path to credential.properties file not found in SharedState!");
+                throw new NodeProcessException("Path to credential.properties file not found!");
+            }
+            InputStream credentialsProperties = new FileInputStream(new File(pathToCredentialProperties));
+
+            String jksPassword = context.sharedState.get("IdxJksPassword").asString();
+            if (jksPassword == null) {
+                logger.error("Error: JKS Password not found in SharedState!");
+                throw new NodeProcessException("JKS password not found in SharedState!");
+            }
+            String keyAlias = context.sharedState.get("IdxKeyAlias").asString();
+            if (keyAlias == null) {
+                logger.error("Error: Key Alias not found in SharedState!");
+                throw new NodeProcessException("Key Alias not found in SharedState!");
+            }
+            String keyPassword = context.sharedState.get("IdxKeyPassword").asString();
+            if (keyPassword == null) {
+                logger.error("Error: Key Password not found in SharedState!");
+                throw new NodeProcessException("Key password not found in SharedState!");
+            }
+            EncryptedKeyPropFileCredentialsProvider provider = new EncryptedKeyPropFileCredentialsProvider(keyStore,
+                    jksPassword, credentialsProperties, keyAlias, keyPassword);
+
              tenantRepoFactory = new TenantRepoFactory(provider);
              logger.debug("Connected to the IdentityX Server");
         } catch (Exception ex) {
             logger.error("An exception occurred connecting to the IX Server: " + ex );
+            throw new NodeProcessException("Error creating tenant factory" + ex);
         }
 
 

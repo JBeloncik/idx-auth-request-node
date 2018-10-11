@@ -39,7 +39,11 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.UUID;
 import javax.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
+
+import com.sun.identity.sm.RequiredValueValidator;
 import org.forgerock.json.JsonValue;
+import org.forgerock.openam.annotations.sm.Attribute;
 import org.forgerock.openam.auth.node.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,45 +55,109 @@ import org.slf4j.LoggerFactory;
                configClass      = IdxAuthRequestNode.Config.class)
 public class IdxAuthRequestNode extends SingleOutcomeNode {
 
-	private final Logger logger = LoggerFactory.getLogger("amAuth");
-
 	/**
-     * Configuration for the node.
-     */
+	 * Configuration for the node.
+	 */
 	interface Config {
+		/**
+		 * the IdenitityX policy which should be used for authentication
+		 * @return the policy name
+		 */
+		@Attribute(order = 100, validators = {RequiredValueValidator.class})
+		String policyName();
 
-    }
+		/**
+		 * the IdenitityX application to be used
+		 * @return the application Id
+		 */
+		@Attribute(order = 200, validators = {RequiredValueValidator.class})
+		String applicationId();
+
+		/**
+		 * the IdenitityX request type (IX, FI)
+		 * @return the request type
+		 */
+		@Attribute(order = 300, validators = {RequiredValueValidator.class})
+		default boolean isFidoRequest() {
+			return true;
+		}
+
+		/**
+		 * option to send push notifications
+		 * @return true or false
+		 */
+		@Attribute(order = 400, validators = {RequiredValueValidator.class})
+		default boolean sendPushNotification() {
+			return true;
+		}
+	}
+
+	private final Config config;
+	private final Logger logger = LoggerFactory.getLogger("amAuth");
 
     /**
      * Create the node.
 	 */
     @Inject
-    public IdxAuthRequestNode() {
+    public IdxAuthRequestNode(@Assisted Config config) {
+		this.config = config;
 	}
 
     @Override
     public Action process(TreeContext context) throws NodeProcessException {
     	String username = context.sharedState.get(SharedStateConstants.USERNAME).asString();
-    	//TODO: validate the username in AM before moving on
-		//will want to call the isActive method
-		//if not active, direct user to a registration page of some kind
 
         TenantRepoFactory tenantRepoFactory;
 		try {
-			InputStream keyStore = new FileInputStream(new File("home/ubuntu/tomcat/daonconfig/IdentityXKeyWrapper" +
-					 ".jks"));
-			InputStream credentialsProperties = new FileInputStream(new File
-					 ("home/ubuntu/tomcat/daonconfig/credential.properties"));
+			//InputStream keyStore = new FileInputStream(new File("home/ubuntu/tomcat/daonconfig/IdentityXKeyWrapper" +
+			//		 ".jks"));
+			//InputStream credentialsProperties = new FileInputStream(new File
+			//		 ("home/ubuntu/tomcat/daonconfig/credential.properties"));
+			//EncryptedKeyPropFileCredentialsProvider provider = new EncryptedKeyPropFileCredentialsProvider(keyStore,
+			//		 "password", credentialsProperties, "identityxCert", "password");
+
+			//Pull these config values from SharedState. They should have been set by the IdxCheckEnrollmentStatus node
+			String pathToKeyStore = context.sharedState.get("IdxPathToKeyStore").asString();
+			if (pathToKeyStore == null) {
+				logger.error("Error: Path to JKS KeyStore not found in SharedState!");
+				throw new NodeProcessException("Path to JKS KeyStore not found!");
+			}
+			InputStream keyStore = new FileInputStream(new File(pathToKeyStore));
+
+			String pathToCredentialProperties = context.sharedState.get("IdxPathToCredentialProperties").asString();
+			if (pathToCredentialProperties == null) {
+				logger.error("Error: Path to credential.properties file not found in SharedState!");
+				throw new NodeProcessException("Path to credential.properties file not found!");
+			}
+			InputStream credentialsProperties = new FileInputStream(new File(pathToCredentialProperties));
+
+			String jksPassword = context.sharedState.get("IdxJksPassword").asString();
+			if (jksPassword == null) {
+				logger.error("Error: JKS Password not found in SharedState!");
+				throw new NodeProcessException("JKS password not found in SharedState!");
+			}
+			String keyAlias = context.sharedState.get("IdxKeyAlias").asString();
+			if (keyAlias == null) {
+				logger.error("Error: Key Alias not found in SharedState!");
+				throw new NodeProcessException("Key Alias not found in SharedState!");
+			}
+			String keyPassword = context.sharedState.get("IdxKeyPassword").asString();
+			if (keyPassword == null) {
+				logger.error("Error: Key Password not found in SharedState!");
+				throw new NodeProcessException("Key password not found in SharedState!");
+			}
 			EncryptedKeyPropFileCredentialsProvider provider = new EncryptedKeyPropFileCredentialsProvider(keyStore,
-					 "password", credentialsProperties, "identityxCert", "password");
+					jksPassword, credentialsProperties, keyAlias, keyPassword);
+
 			tenantRepoFactory = new TenantRepoFactory(provider);
       		logger.debug("Connected to the IdentityX Server");
 		} catch (Exception ex) {
 			logger.debug("An exception occurred connecting to the IX Server: " + ex );
-			throw new NodeProcessException(ex);
+			throw new NodeProcessException("Error creating tenant factory" + ex);
 		}
 
-		String authHref = generateAuthenticationRequest(username, "login", tenantRepoFactory);
+		//String authHref = generateAuthenticationRequest(username, "login", tenantRepoFactory);
+		String authHref = generateAuthenticationRequest(username, config.policyName(), tenantRepoFactory);
 		logger.debug("Auth href: " + authHref);
 
     	//Place the href value in sharedState
@@ -132,15 +200,14 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
 			request.setPolicy(policyCollection.getItems()[0]);
 		}
 		else {
-			//TODO Should this be an error case? If so need to trhwo a NodeProcessException
-			logger.debug("Could not find an active policy with the PolicyId: " + policyName);
+			logger.error("Could not find an active policy with the PolicyId: " + policyName);
+			throw new NodeProcessException("Could not find an active policy with the PolicyId: " + policyName);
 		}
 
+		String appId = config.applicationId();
 		ApplicationRepository applicationRepo = tenantRepoFactory.getApplicationRepo();
 		ApplicationQueryHolder applicationQueryHolder = new ApplicationQueryHolder();
-
-		//TODO this need to be pulled out as configuration for administrator to enter
-		applicationQueryHolder.getSearchSpec().setApplicationId("daonbank");
+		applicationQueryHolder.getSearchSpec().setApplicationId(appId);
 		ApplicationCollection applicationCollection = null;
 		try {
 			applicationCollection = applicationRepo.list(applicationQueryHolder);
@@ -152,14 +219,25 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
 			request.setApplication(applicationCollection.getItems()[0]);
 		}
 		else {
-			logger.debug("No Application was found with this name " + "daonbank");
+			logger.debug("No Application was found with this name " + appId);
+			throw new NodeProcessException("No Application was found with this name " + appId);
 		}
 
 		request.setDescription("OpenAM has Requested an Authentication.");
-		request.setType("IX");
+
+		String txnRequestType = "FI";
+		if (!config.isFidoRequest()) {
+			txnRequestType = "IX";
+		}
+		request.setType(txnRequestType);
+		request.setOneTimePasswordEnabled(false);
 		request.setAuthenticationRequestId(UUID.randomUUID().toString());
-		//TODO This should probably also be configuration for administrator to choose
-		request.setPushNotificationType(TransactionPushNotificationTypeEnum.VERIFY_WITH_CONFIRMATION);
+
+		if (config.sendPushNotification()) {
+			request.setPushNotificationType(TransactionPushNotificationTypeEnum.VERIFY_WITH_CONFIRMATION);
+		}
+		//request.setPushNotificationType(TransactionPushNotificationTypeEnum.VERIFY_WITH_CONFIRMATION);
+
 		AuthenticationRequestRepository authenticationRequestRepo = tenantRepoFactory.getAuthenticationRequestRepo();
 		try {
 			request = authenticationRequestRepo.create(request);
@@ -198,5 +276,6 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
 				return null;
 		}
 	}
+
 
 }

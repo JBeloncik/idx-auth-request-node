@@ -15,15 +15,9 @@ import org.forgerock.openam.authentication.callbacks.PollingWaitCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Node.Metadata(outcomeProvider  = IdxAuthStatusNode.IdxAuthStatusOutcomeProvider.class,
-        configClass      = IdxAuthStatusNode.Config.class)
+@Node.Metadata(outcomeProvider  = AbstractDecisionNode.OutcomeProvider.class,
+        configClass      = IdxSponsorUser.Config.class)
 public class IdxSponsorUser extends AbstractDecisionNode {
-
-    private final Config config;
-
-    private final Logger logger = LoggerFactory.getLogger("amAuth");
-    private final String IDX_QR_KEY = "idx-qr-key";
-    private final String IDX_POLL_TIMES = "idx-poll-times-remaining";
 
     /**
      * Configuration for the node.
@@ -37,6 +31,13 @@ public class IdxSponsorUser extends AbstractDecisionNode {
         int numberOfTimesToPoll();
 
     }
+
+    private final Config config;
+    private final Logger logger = LoggerFactory.getLogger("amAuth");
+    private final String IDX_QR_KEY = "idx-qr-key";
+    private final String IDX_POLL_TIMES = "idx-poll-times-remaining";
+
+
 
     /**
      * Create the node.
@@ -98,7 +99,17 @@ public class IdxSponsorUser extends AbstractDecisionNode {
 
     private String getQRText(JsonValue sharedState) {
         //TODO Get the QRText from IdentityX
-        return "";
+
+        //testing only
+        String qrCode = "iVBORw0KGgoAAAANSUhEUgAAAH0AAAB9AQAAAACn+1GIAAAA8klEQVR42u3VsQ2EMAwFUKMUdLBAJNZI" +
+                "l5lY4AgLhJXoskYkLwBdCoTPXHFAFae7k0iFXmGsHxuA7ifBAz8LDhSlzgO0YpgIvYHG8oMUPCAl3I0qAgfQFMJ6vLkAuN" +
+                "Mx6det9QxwHt7gPaAM8FngKEBicBCruVuDHsRA1HmrxmvRHCx1bCy3ubVioKSHgFP65pGHHfjgfuaRB2+2inAKSHKo+WJ1" +
+                "H84aAqBxjn3aCoDbrCM3S2I47orHJ5EceIIm3jmjWzHwnO41p77J4bNAmpMfisCqy2jLwMQhXD8GGeBOncWRCuDYOYtriK" +
+                "0Ynl/BH8AbsuBdeh1MqsIAAAAASUVORK5CYII=";
+
+
+
+        return qrCode;
     }
 
     private boolean isEnrolled(JsonValue sharedState) {
