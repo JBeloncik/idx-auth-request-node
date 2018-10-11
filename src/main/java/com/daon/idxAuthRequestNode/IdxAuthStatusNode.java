@@ -72,14 +72,7 @@ public class IdxAuthStatusNode implements Node {
         String username = context.sharedState.get(SharedStateConstants.USERNAME).asString();
         TenantRepoFactory tenantRepoFactory = null;
         try {
-            //InputStream keyStore = new FileInputStream(new File("home/ubuntu/tomcat/daonconfig/IdentityXKeyWrapper" +
-            //         ".jks"));
-            //InputStream credenitalsProperties = new FileInputStream(new File
-            //         ("home/ubuntu/tomcat/daonconfig/credential.properties"));
-             //EncryptedKeyPropFileCredentialsProvider provider = new EncryptedKeyPropFileCredentialsProvider(keyStore,
-             //        "password", credenitalsProperties, "identityxCert", "password");
-
-            //Pull these config values from SharedState. They should have been set by the IdxCheckEnrollmentStatus node
+            //Pull these config values from SharedState. These are set in the IdxCheckEnrollmentStatus node
             String pathToKeyStore = context.sharedState.get("IdxPathToKeyStore").asString();
             if (pathToKeyStore == null) {
                 logger.error("Error: Path to JKS KeyStore not found in SharedState!");

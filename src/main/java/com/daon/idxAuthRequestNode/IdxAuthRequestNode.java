@@ -109,14 +109,7 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
 
         TenantRepoFactory tenantRepoFactory;
 		try {
-			//InputStream keyStore = new FileInputStream(new File("home/ubuntu/tomcat/daonconfig/IdentityXKeyWrapper" +
-			//		 ".jks"));
-			//InputStream credentialsProperties = new FileInputStream(new File
-			//		 ("home/ubuntu/tomcat/daonconfig/credential.properties"));
-			//EncryptedKeyPropFileCredentialsProvider provider = new EncryptedKeyPropFileCredentialsProvider(keyStore,
-			//		 "password", credentialsProperties, "identityxCert", "password");
-
-			//Pull these config values from SharedState. They should have been set by the IdxCheckEnrollmentStatus node
+			//Pull these config values from SharedState. These are in the IdxCheckEnrollmentStatus node
 			String pathToKeyStore = context.sharedState.get("IdxPathToKeyStore").asString();
 			if (pathToKeyStore == null) {
 				logger.error("Error: Path to JKS KeyStore not found in SharedState!");
@@ -156,7 +149,6 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
 			throw new NodeProcessException("Error creating tenant factory" + ex);
 		}
 
-		//String authHref = generateAuthenticationRequest(username, "login", tenantRepoFactory);
 		String authHref = generateAuthenticationRequest(username, config.policyName(), tenantRepoFactory);
 		logger.debug("Auth href: " + authHref);
 
@@ -236,7 +228,6 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
 		if (config.sendPushNotification()) {
 			request.setPushNotificationType(TransactionPushNotificationTypeEnum.VERIFY_WITH_CONFIRMATION);
 		}
-		//request.setPushNotificationType(TransactionPushNotificationTypeEnum.VERIFY_WITH_CONFIRMATION);
 
 		AuthenticationRequestRepository authenticationRequestRepo = tenantRepoFactory.getAuthenticationRequestRepo();
 		try {

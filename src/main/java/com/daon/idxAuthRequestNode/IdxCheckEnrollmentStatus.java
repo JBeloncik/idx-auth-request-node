@@ -18,7 +18,15 @@
 package com.daon.idxAuthRequestNode;
 
 import javax.inject.Inject;
+
+import com.daon.identityx.rest.model.pojo.User;
 import com.google.inject.assistedinject.Assisted;
+import com.identityx.clientSDK.TenantRepoFactory;
+import com.identityx.clientSDK.collections.UserCollection;
+import com.identityx.clientSDK.credentialsProviders.EncryptedKeyPropFileCredentialsProvider;
+import com.identityx.clientSDK.exceptions.IdxRestException;
+import com.identityx.clientSDK.queryHolders.UserQueryHolder;
+import com.identityx.clientSDK.repositories.UserRepository;
 import org.forgerock.guava.common.collect.ImmutableList;
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.annotations.sm.Attribute;
@@ -28,6 +36,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.sun.identity.sm.RequiredValueValidator;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.List;
 
 
@@ -105,11 +116,68 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
         return goTo(isUserEnrolled).replaceSharedState(newState).build();
     }
 
-    private boolean isEnrolled(JsonValue sharedState) {
-        //TODO Check if the user is enrolled in identityX
+    private boolean isEnrolled(JsonValue sharedState) throws NodeProcessException {
 
-        return true;
+        String username = sharedState.get(SharedStateConstants.USERNAME).asString();
+
+        TenantRepoFactory tenantRepoFactory;
+        try {
+
+            InputStream keyStore = new FileInputStream(new File(config.pathToKeyStore()));
+            InputStream credentialsProperties = new FileInputStream(new File(config.pathToCredentialProperties()));
+            String jksPassword = config.jksPassword();
+            String keyAlias = config.keyAlias();
+            String keyPassword = config.keyPassword();
+
+            EncryptedKeyPropFileCredentialsProvider provider = new EncryptedKeyPropFileCredentialsProvider(keyStore,
+                    jksPassword, credentialsProperties, keyAlias, keyPassword);
+
+            tenantRepoFactory = new TenantRepoFactory(provider);
+            logger.debug("Connected to the IdentityX Server");
+        } catch (Exception ex) {
+            logger.debug("An exception occurred connecting to the IX Server: " + ex );
+            throw new NodeProcessException("Error creating tenant factory" + ex);
+        }
+
+        User user = this.findUser(username, tenantRepoFactory);
+        if (user == null) {
+            logger.debug("User with ID " + username + " not found in IdentityX!");
+            return false;
+        }
+        else {
+            logger.debug("User found with ID " + username);
+            return true;
+        }
+
     }
 
+    private User findUser(String userId, TenantRepoFactory tenantRepoFactory) throws NodeProcessException {
+        UserRepository userRepo = tenantRepoFactory.getUserRepo();
+        UserQueryHolder holder = new UserQueryHolder();
+        holder.getSearchSpec().setUserId(userId);
+        UserCollection userCollection = null;
+        try {
+            userCollection = userRepo.list(holder);
+        } catch (IdxRestException e) {
+            throw new NodeProcessException(e);
+        }
+
+        if (userCollection == null)	{
+            return null;
+        }
+        if (userCollection.getItems() == null) {
+            return null;
+        }
+        switch (userCollection.getItems().length) {
+            case 0:
+                return null;
+            case 1:
+                return userCollection.getItems()[0];
+            default:
+                String error = "More than one user with the same UserId";
+                logger.error(error);
+                return null;
+        }
+    }
 
 }
