@@ -101,15 +101,11 @@ public class IdxSponsorUser extends AbstractDecisionNode {
         //TODO Get the QRText from IdentityX
 
         //testing only
-        String qrCode = "iVBORw0KGgoAAAANSUhEUgAAAH0AAAB9AQAAAACn+1GIAAAA8klEQVR42u3VsQ2EMAwFUKMUdLBAJNZI" +
+        return "iVBORw0KGgoAAAANSUhEUgAAAH0AAAB9AQAAAACn+1GIAAAA8klEQVR42u3VsQ2EMAwFUKMUdLBAJNZI" +
                 "l5lY4AgLhJXoskYkLwBdCoTPXHFAFae7k0iFXmGsHxuA7ifBAz8LDhSlzgO0YpgIvYHG8oMUPCAl3I0qAgfQFMJ6vLkAuN" +
                 "Mx6det9QxwHt7gPaAM8FngKEBicBCruVuDHsRA1HmrxmvRHCx1bCy3ubVioKSHgFP65pGHHfjgfuaRB2+2inAKSHKo+WJ1" +
                 "H84aAqBxjn3aCoDbrCM3S2I47orHJ5EceIIm3jmjWzHwnO41p77J4bNAmpMfisCqy2jLwMQhXD8GGeBOncWRCuDYOYtriK" +
                 "0Ynl/BH8AbsuBdeh1MqsIAAAAASUVORK5CYII=";
-
-
-
-        return qrCode;
     }
 
     private boolean isEnrolled(JsonValue sharedState) {

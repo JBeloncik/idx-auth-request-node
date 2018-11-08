@@ -17,29 +17,26 @@
 
 package com.daon.idxAuthRequestNode;
 
-import javax.inject.Inject;
+import static com.daon.idxAuthRequestNode.IdxCommon.findUser;
 
 import com.daon.identityx.rest.model.pojo.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.assistedinject.Assisted;
 import com.identityx.clientSDK.TenantRepoFactory;
-import com.identityx.clientSDK.collections.UserCollection;
 import com.identityx.clientSDK.credentialsProviders.EncryptedKeyPropFileCredentialsProvider;
+import com.identityx.clientSDK.exceptions.ClientInitializationException;
 import com.identityx.clientSDK.exceptions.IdxRestException;
-import com.identityx.clientSDK.queryHolders.UserQueryHolder;
-import com.identityx.clientSDK.repositories.UserRepository;
-import org.forgerock.guava.common.collect.ImmutableList;
+import com.sun.identity.sm.RequiredValueValidator;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import javax.inject.Inject;
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.annotations.sm.Attribute;
 import org.forgerock.openam.auth.node.api.*;
-import org.forgerock.util.i18n.PreferredLocales;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.sun.identity.sm.RequiredValueValidator;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.List;
 
 
 /**
@@ -103,7 +100,41 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
     @Override
     public Action process(TreeContext context) throws NodeProcessException {
 
-        boolean isUserEnrolled = isEnrolled(context.sharedState);
+        String username = context.sharedState.get(SharedStateConstants.USERNAME).asString();
+
+        TenantRepoFactory tenantRepoFactory;
+        InputStream keyStore;
+        InputStream credentialsProperties;
+        try {
+            keyStore = new FileInputStream(new File(config.pathToKeyStore()));
+            credentialsProperties = new FileInputStream(new File(config.pathToCredentialProperties()));
+        } catch (FileNotFoundException e) {
+            logger.error("An exception occured opening either the keystore of the credentials property file");
+            throw new NodeProcessException(e);
+        }
+
+        String jksPassword = config.jksPassword();
+        String keyAlias = config.keyAlias();
+        String keyPassword = config.keyPassword();
+
+
+        EncryptedKeyPropFileCredentialsProvider provider;
+        try {
+            provider = new EncryptedKeyPropFileCredentialsProvider(keyStore,
+                    jksPassword, credentialsProperties, keyAlias, keyPassword);
+        } catch (ClientInitializationException e) {
+            throw new NodeProcessException(e);
+        }
+
+        try {
+            tenantRepoFactory = new TenantRepoFactory(provider);
+        } catch (IdxRestException e) {
+            logger.debug("An exception occurred connecting to the IX Server");
+            throw new NodeProcessException(e);
+        }
+
+        logger.debug("Connected to the IdentityX Server");
+
 
         //set all config params in SharedState
         JsonValue newState = context.sharedState.copy();
@@ -113,71 +144,23 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
         newState.put("IdxKeyAlias", config.keyAlias());
         newState.put("IdxKeyPassword", config.keyPassword());
 
-        return goTo(isUserEnrolled).replaceSharedState(newState).build();
-    }
-
-    private boolean isEnrolled(JsonValue sharedState) throws NodeProcessException {
-
-        String username = sharedState.get(SharedStateConstants.USERNAME).asString();
-
-        TenantRepoFactory tenantRepoFactory;
-        try {
-
-            InputStream keyStore = new FileInputStream(new File(config.pathToKeyStore()));
-            InputStream credentialsProperties = new FileInputStream(new File(config.pathToCredentialProperties()));
-            String jksPassword = config.jksPassword();
-            String keyAlias = config.keyAlias();
-            String keyPassword = config.keyPassword();
-
-            EncryptedKeyPropFileCredentialsProvider provider = new EncryptedKeyPropFileCredentialsProvider(keyStore,
-                    jksPassword, credentialsProperties, keyAlias, keyPassword);
-
-            tenantRepoFactory = new TenantRepoFactory(provider);
-            logger.debug("Connected to the IdentityX Server");
-        } catch (Exception ex) {
-            logger.debug("An exception occurred connecting to the IX Server: " + ex );
-            throw new NodeProcessException("Error creating tenant factory" + ex);
-        }
-
-        User user = this.findUser(username, tenantRepoFactory);
+        User user = findUser(username, tenantRepoFactory);
         if (user == null) {
             logger.debug("User with ID " + username + " not found in IdentityX!");
-            return false;
-        }
-        else {
-            logger.debug("User found with ID " + username);
-            return true;
+            return goTo(false).replaceSharedState(newState).build();
         }
 
-    }
-
-    private User findUser(String userId, TenantRepoFactory tenantRepoFactory) throws NodeProcessException {
-        UserRepository userRepo = tenantRepoFactory.getUserRepo();
-        UserQueryHolder holder = new UserQueryHolder();
-        holder.getSearchSpec().setUserId(userId);
-        UserCollection userCollection = null;
+        logger.debug("User found with ID " + username);
         try {
-            userCollection = userRepo.list(holder);
-        } catch (IdxRestException e) {
-            throw new NodeProcessException(e);
+            newState.put("Daon_User", IdxCommon.objectMapper.writeValueAsString(user));
+        } catch (JsonProcessingException e) {
+            logger.error("Unable to write the user object as string");
         }
 
-        if (userCollection == null)	{
-            return null;
-        }
-        if (userCollection.getItems() == null) {
-            return null;
-        }
-        switch (userCollection.getItems().length) {
-            case 0:
-                return null;
-            case 1:
-                return userCollection.getItems()[0];
-            default:
-                String error = "More than one user with the same UserId";
-                logger.error(error);
-                return null;
-        }
+
+        return goTo(true).replaceSharedState(newState).build();
     }
+
+
 
 }
