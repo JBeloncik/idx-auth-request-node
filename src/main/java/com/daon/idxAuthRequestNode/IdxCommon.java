@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 class IdxCommon {
     
-    static ObjectMapper objectMapper;
+    static ObjectMapper objectMapper = new ObjectMapper();
 
     private static final Logger logger = LoggerFactory.getLogger("amAuth");
 
