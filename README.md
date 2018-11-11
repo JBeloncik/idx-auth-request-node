@@ -1,43 +1,32 @@
-<!--
- * The contents of this file are subject to the terms of the Common Development and
- * Distribution License (the License). You may not use this file except in compliance with the
- * License.
- *
- * You can obtain a copy of the License at legal/CDDLv1.0.txt. See the License for the
- * specific language governing permission and limitations under the License.
- *
- * When distributing Covered Software, include this CDDL Header Notice in each file and include
- * the License file at legal/CDDLv1.0.txt. If applicable, add the following below the CDDL
- * Header, with the fields enclosed by brackets [] replaced by your own identifying
- * information: "Portions copyright [year] [name of copyright owner]".
- *
- * Copyright ${data.get('yyyy')} ForgeRock AS.
--->
 # IdxAuthRequestNode
 
-A simple authentication node for ForgeRock's [Identity Platform][forgerock_platform] 5.5 and above. This node... **SHORT DESCRIPTION HERE**
+Daon's IdentityX platform is helping customers across the globe ditch passwords and deliver world-class customer experience by leveraging biometrics. This set of nodes allows ForgeRock customers to easily add biometrics to their authentication trees.
 
+## About Daon ##
+Daon, [www.daon.com](www.daon.com), is an innovator in developing and deploying biometric authentication and identity assurance solutions worldwide. Daon has pioneered methods for securely and conveniently combining biometric and identity capabilities across multiple channels with large-scale deployments that span payments verification, digital banking, wealth, insurance, telcos, and securing borders and critical infrastructure. Daon's IdentityX® platform provides an inclusive, trusted digital security experience, enabling the creation, authentication and recovery of a user’s identity and allowing businesses to conduct transactions with any consumer through any medium with total confidence. Get to know us on [Twitter](https://twitter.com/DaonInc), [Facebook](https://www.facebook.com/humanauthentication) and [LinkedIn](https://www.linkedin.com/company/daon).
 
-Copy the .jar file from the ../target directory into the ../web-container/webapps/openam/WEB-INF/lib directory where AM is deployed.  Restart the web container to pick up the new node.  The node will then appear in the authentication trees components palette.
+## Installation ##
 
+Copy the .jar file from the ../target directory into the ../web-container/webapps/openam/WEB-INF/lib directory where AM is deployed.  Restart the web container to pick up the new node.  The nodes will then appear in the authentication trees components palette.
 
-**USAGE HERE**
+## USING THE NODES IN YOUR TREE ##
 
+### There are 4 nodes included ###
+- **IdxCheckEnrollmentStatus** This node makes a REST API call to IdentityX to ensure the username provided is enrolled. This node contains the configuration parameters for the IdentityX Rest Services, so it is required to be added to the tree in order for the other nodes to work.
+- **IdxAuthRequestNode** This node makes a REST API call to IdentityX to generate and authentication request.
+- **IdxAuthStatusNode** This node makes a REST API call to IdentityX to check the status of an authentication request.
+- **IdxSponsorUser** This node will add sponsorship/registration in a future release.
 
-The code in this repository has binary dependencies that live in the ForgeRock maven repository. Maven can be configured to authenticate to this repository by following the following [ForgeRock Knowledge Base Article](https://backstage.forgerock.com/knowledge/kb/article/a74096897).
-
-**SPECIFIC BUILD INSTRUCTIONS HERE**
-
-**SCREENSHOTS ARE GOOD LIKE BELOW**
-
+The image below shows an example authentication tree using these nodes.
 ![ScreenShot](./example.png)
 
-        
-The sample code described herein is provided on an "as is" basis, without warranty of any kind, to the fullest extent permitted by law. ForgeRock does not warrant or guarantee the individual success developers may have in implementing the sample code on their development platforms or in production configurations.
+### CONNECTING TO AN IDENTITYX SERVER ###
+The nodes must be configured to connect to an IdentityX server. Contact your Daon representative for connection details or to arrange a demonstration.
 
-ForgeRock does not warrant, guarantee or make any representations regarding the use, results of use, accuracy, timeliness or completeness of any data or information relating to the sample code. ForgeRock disclaims all warranties, expressed or implied, and in particular, disclaims all warranties of merchantability, and warranties related to the code, or any service or software related thereto.
+## FUTURE UPDATES ##
+- **Sponsorship/Registration** The current version requires the user to be enrolled in IdentityX using the same userId as the identity in OpenAM. The IdxSponsorUser node will add the API calls and logic to allow optional registration in IdentityX as a part of the authentication tree.
 
-ForgeRock shall not be liable for any direct, indirect or consequential damages or costs of any type arising out of any action taken by you or others related to the sample code.
+## SUPPORT ##
+For more information on this node or to request a demonstration, contact us at info@daon.com
 
-[forgerock_platform]: https://www.forgerock.com/platform/  
 # idx-auth-request-node
