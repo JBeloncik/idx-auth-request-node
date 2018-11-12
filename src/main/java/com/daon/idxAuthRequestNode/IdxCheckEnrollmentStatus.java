@@ -120,8 +120,8 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
 
         EncryptedKeyPropFileCredentialsProvider provider;
         try {
-            provider = new EncryptedKeyPropFileCredentialsProvider(keyStore,
-                    jksPassword, credentialsProperties, keyAlias, keyPassword);
+            provider = IdxEncryptedKeyPropFileSingleton.getInstance(keyStore,
+                    jksPassword, credentialsProperties, keyAlias, keyPassword).provider;
         } catch (ClientInitializationException e) {
             throw new NodeProcessException(e);
         }
