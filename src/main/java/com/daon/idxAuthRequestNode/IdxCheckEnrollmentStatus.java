@@ -34,6 +34,7 @@ import java.io.InputStream;
 import javax.inject.Inject;
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.annotations.sm.Attribute;
+import org.forgerock.openam.sm.annotations.adapters.Password;
 import org.forgerock.openam.auth.node.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,7 +72,8 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
          * @return the jksPassword
          */
         @Attribute(order = 300, validators = {RequiredValueValidator.class})
-        String jksPassword();
+        @Password
+        char[] jksPassword();
 
         /**
          * the key alias
@@ -85,7 +87,8 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
          * @return the keyPassword
          */
         @Attribute(order = 500, validators = {RequiredValueValidator.class})
-        String keyPassword();
+        @Password
+        char[] keyPassword();
 
     }
 
@@ -113,9 +116,9 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
             throw new NodeProcessException(e);
         }
 
-        String jksPassword = config.jksPassword();
+        String jksPassword = String.valueOf(config.jksPassword());
         String keyAlias = config.keyAlias();
-        String keyPassword = config.keyPassword();
+        String keyPassword = String.valueOf(config.keyPassword());
 
 
         EncryptedKeyPropFileCredentialsProvider provider;
@@ -140,9 +143,9 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
         JsonValue newState = context.sharedState.copy();
         newState.put("IdxPathToKeyStore", config.pathToKeyStore());
         newState.put("IdxPathToCredentialProperties", config.pathToCredentialProperties());
-        newState.put("IdxJksPassword", config.jksPassword());
-        newState.put("IdxKeyAlias", config.keyAlias());
-        newState.put("IdxKeyPassword", config.keyPassword());
+        newState.put("IdxJksPassword", jksPassword);
+        newState.put("IdxKeyAlias", keyAlias);
+        newState.put("IdxKeyPassword", keyPassword);
 
         User user = findUser(username, tenantRepoFactory);
         if (user == null) {

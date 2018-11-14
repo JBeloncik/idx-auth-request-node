@@ -17,16 +17,43 @@ Copy the .jar file from the ../target directory into the ../web-container/webapp
 - **IdxAuthStatusNode** This node makes a REST API call to IdentityX to check the status of an authentication request.
 - **IdxSponsorUser** This node will add sponsorship/registration in a future release.
 
+### CONNECTING TO AN IDENTITYX SERVER ###
+The nodes must be configured to connect to an IdentityX server. Contact your Daon representative for connection details.
+
+### Configuration Parameters ###
+IdxCheckEnrollmentStatus contains the following configurable parameters:
+- **pathToKeyStore** full path to the .jks keystore file
+- **pathToCredentialProperties** full path to the credential.properties file
+- **jksPassword** password for the .jks keystore file
+- **keyAlias** key alias used in the .jks keystore
+- **keyPassword** key password for the .jks keystore
+
+IdxAuthRequestNode contains the following configurable parameters:
+- **policyName** name of the authentication policy which should be used
+- **applicationId** name of the application which should be used
+- **isFidoRequest** whether to generate a FIDO or traditional IdentityX authentication request
+- **sendPushNotification** whether a push notification should be sent by the IdentityX server
+
 The image below shows an example authentication tree using these nodes.
 ![ScreenShot](./example.png)
 
-### CONNECTING TO AN IDENTITYX SERVER ###
-The nodes must be configured to connect to an IdentityX server. Contact your Daon representative for connection details or to arrange a demonstration.
+### Authenticating ###
+The IdxCheckEnrollmentStatus node expects a username to be provided in sharedState. In the example tree above, a simple username collector is used. The IdxAuthRequestNode will then call IdentityX to generate an authentication request for the provided username. Once created, the IdxAuthStatusNode is used to check the status of the authentication request. A polling wait node and retry decision node can be used to poll for the status. Once the user successfully authenticates on their mobile device, the status will change to SUCCESS.
+![ScreenShot](./capture_username.png)
+![ScreenShot](./waiting_for_response.png)
+
+The user must authenticate using a mobile app which has been built using the IdentityX FIDO Client SDK.
+![ScreenShot](./openam_face.png)
+![ScreenShot](./openam_voice.png)
+![ScreenShot](./openam_finger.png)
 
 ## FUTURE UPDATES ##
 - **Sponsorship/Registration** The current version requires the user to be enrolled in IdentityX using the same userId as the identity in OpenAM. The IdxSponsorUser node will add the API calls and logic to allow optional registration in IdentityX as a part of the authentication tree.
 
 ## SUPPORT ##
-For more information on this node or to request a demonstration, contact us at info@daon.com
+For more information on this node or to request a demonstration, please contact:
+Frank Gasparovic - frank.gasparovic@forgerock.com
+or
+Jason Beloncik - jason.beloncik@daon.com
 
 # idx-auth-request-node

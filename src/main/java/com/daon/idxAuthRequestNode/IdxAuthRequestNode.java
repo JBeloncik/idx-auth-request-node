@@ -193,6 +193,7 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
 		try {
 			request = authenticationRequestRepo.create(request);
 		} catch (IdxRestException e) {
+			logger.debug("Error creating authentication request for user: " + user.getUserId());
 			throw new NodeProcessException(e);
 		}
 		logger.debug("Added an authentication request, - authRequestId: {}" + request.getId());
