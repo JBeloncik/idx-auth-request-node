@@ -4,15 +4,9 @@ import com.daon.identityx.rest.model.pojo.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.identityx.clientSDK.TenantRepoFactory;
 import com.identityx.clientSDK.collections.UserCollection;
-import com.identityx.clientSDK.credentialsProviders.EncryptedKeyPropFileCredentialsProvider;
-import com.identityx.clientSDK.exceptions.ClientInitializationException;
 import com.identityx.clientSDK.exceptions.IdxRestException;
 import com.identityx.clientSDK.queryHolders.UserQueryHolder;
 import com.identityx.clientSDK.repositories.UserRepository;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
 import org.forgerock.openam.auth.node.api.NodeProcessException;
 import org.forgerock.openam.auth.node.api.TreeContext;
 import org.slf4j.Logger;
@@ -63,26 +57,11 @@ class IdxCommon {
             throw new NodeProcessException("Path to JKS KeyStore not found!");
         }
 
-        InputStream keyStore;
-        try {
-            keyStore = new FileInputStream(new File(pathToKeyStore));
-        } catch (FileNotFoundException e) {
-            logger.error("Cannot open keystore file");
-            throw new NodeProcessException(e);
-        }
-
         String pathToCredentialProperties = context.sharedState.get("IdxPathToCredentialProperties").asString();
 
         if (pathToCredentialProperties == null) {
             logger.error("Error: Path to credential.properties file not found in SharedState!");
             throw new NodeProcessException("Path to credential.properties file not found!");
-        }
-        InputStream credentialsProperties;
-        try {
-            credentialsProperties = new FileInputStream(new File(pathToCredentialProperties));
-        } catch (FileNotFoundException e) {
-            logger.error("Cannot open credential properties file");
-            throw new NodeProcessException(e);
         }
 
         String jksPassword = context.sharedState.get("IdxJksPassword").asString();
@@ -103,21 +82,21 @@ class IdxCommon {
             throw new NodeProcessException("Key password not found in SharedState!");
         }
 
-        EncryptedKeyPropFileCredentialsProvider provider;
         try {
-            provider = new EncryptedKeyPropFileCredentialsProvider(keyStore,
-                    jksPassword, credentialsProperties, keyAlias, keyPassword);
-        } catch (ClientInitializationException e) {
-            logger.error("Cannot initialize encrypted key property file");
-            throw new NodeProcessException(e);
+            tenantRepoFactory = IdxTenantRepoFactorySingleton.getInstance(pathToKeyStore, jksPassword,
+                    pathToCredentialProperties, keyAlias, keyPassword).tenantRepoFactory;
+        } catch (IdxRestException e) {
+            logger.debug("An exception occurred using the tenantRepoFactorySingleton");
+            throw new NodeProcessException("Error using tenantRepoFactorySingleton");
         }
 
-        try {
-            tenantRepoFactory = new TenantRepoFactory(provider);
-        } catch (IdxRestException e) {
-            logger.debug("An exception occurred connecting to the IX Server");
-            throw new NodeProcessException(e);
+        if (tenantRepoFactory != null) {
+            logger.debug("Connected to the IdentityX Server");
+        } else {
+            logger.debug("Error creating tenantRepoFactory");
+            throw new NodeProcessException("Error creating tenantRepoFactory");
         }
+
         return tenantRepoFactory;
     }
 }
