@@ -23,14 +23,8 @@ import com.daon.identityx.rest.model.pojo.User;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.assistedinject.Assisted;
 import com.identityx.clientSDK.TenantRepoFactory;
-import com.identityx.clientSDK.credentialsProviders.EncryptedKeyPropFileCredentialsProvider;
-import com.identityx.clientSDK.exceptions.ClientInitializationException;
 import com.identityx.clientSDK.exceptions.IdxRestException;
 import com.sun.identity.sm.RequiredValueValidator;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
 import javax.inject.Inject;
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.annotations.sm.Attribute;
@@ -105,35 +99,19 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
 
         String username = context.sharedState.get(SharedStateConstants.USERNAME).asString();
 
-        TenantRepoFactory tenantRepoFactory;
-        InputStream keyStore;
-        InputStream credentialsProperties;
-        try {
-            keyStore = new FileInputStream(new File(config.pathToKeyStore()));
-            credentialsProperties = new FileInputStream(new File(config.pathToCredentialProperties()));
-        } catch (FileNotFoundException e) {
-            logger.error("An exception occured opening either the keystore of the credentials property file");
-            throw new NodeProcessException(e);
-        }
-
+        String keyStore = config.pathToKeyStore();
+        String credentialProperties = config.pathToCredentialProperties();
         String jksPassword = String.valueOf(config.jksPassword());
         String keyAlias = config.keyAlias();
         String keyPassword = String.valueOf(config.keyPassword());
 
-
-        EncryptedKeyPropFileCredentialsProvider provider;
+        TenantRepoFactory tenantRepoFactory = null;
         try {
-            provider = IdxEncryptedKeyPropFileSingleton.getInstance(keyStore,
-                    jksPassword, credentialsProperties, keyAlias, keyPassword).provider;
-        } catch (ClientInitializationException e) {
-            throw new NodeProcessException(e);
-        }
-
-        try {
-            tenantRepoFactory = new TenantRepoFactory(provider);
+            tenantRepoFactory = IdxTenantRepoFactorySingleton.getInstance(keyStore, jksPassword, credentialProperties,
+                    keyAlias, keyPassword).tenantRepoFactory;
         } catch (IdxRestException e) {
-            logger.debug("An exception occurred connecting to the IX Server");
-            throw new NodeProcessException(e);
+            logger.debug("An exception occurred using the tenantRepoFactorySingleton");
+            throw new NodeProcessException("Error using tenantRepoFactorySingleton");
         }
 
         logger.debug("Connected to the IdentityX Server");
@@ -141,8 +119,8 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
 
         //set all config params in SharedState
         JsonValue newState = context.sharedState.copy();
-        newState.put("IdxPathToKeyStore", config.pathToKeyStore());
-        newState.put("IdxPathToCredentialProperties", config.pathToCredentialProperties());
+        newState.put("IdxPathToKeyStore", keyStore);
+        newState.put("IdxPathToCredentialProperties", credentialProperties);
         newState.put("IdxJksPassword", jksPassword);
         newState.put("IdxKeyAlias", keyAlias);
         newState.put("IdxKeyPassword", keyPassword);
