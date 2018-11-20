@@ -19,14 +19,19 @@ import com.google.inject.assistedinject.Assisted;
 import com.identityx.clientSDK.repositories.SponsorshipRepository;
 import com.sun.identity.authentication.callbacks.ScriptTextOutputCallback;
 import com.sun.identity.sm.RequiredValueValidator;
+
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
+import java.net.URLEncoder;
 import javax.inject.Inject;
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.annotations.sm.Attribute;
 import org.forgerock.openam.auth.node.api.*;
 import org.forgerock.openam.authentication.callbacks.PollingWaitCallback;
+import org.forgerock.openam.utils.qr.GenerationUtils;
+import org.forgerock.openam.utils.qr.ErrorCorrectionLevel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,6 +91,9 @@ public class IdxSponsorUser extends AbstractDecisionNode {
 
         TenantRepoFactory tenantRepoFactory = getTenantRepoFactory(context);
 
+
+        //TODO - one of these is evaluating to false - resulting in an infinite loop
+        //       since it is resetting the numberOfTimesToPoll each time through
         if (!sharedState.isDefined(IDX_QR_KEY) || !scriptTextOutputCallback.isPresent() || !scriptTextOutputCallback
                 .get().getMessage().equals(sharedState.get(IDX_QR_KEY).asString())) {
 
@@ -116,17 +124,22 @@ public class IdxSponsorUser extends AbstractDecisionNode {
 
     }
 
-    private Action buildResponse(JsonValue sharedState, String qrJavaScript) {
+    private Action buildResponse(JsonValue sharedState, String qrCodeString) {
         Integer pollTimesRemaining = sharedState.get(IDX_POLL_TIMES).asInteger();
         if (pollTimesRemaining == 0) {
             // If number of times remaining to poll is 0, send user to false
             return goTo(false).replaceSharedState(sharedState).build();
         }
         sharedState.put(IDX_POLL_TIMES, pollTimesRemaining - 1);
-        sharedState.put(IDX_QR_KEY, qrJavaScript);
-        return send(Arrays.asList(new ScriptTextOutputCallback(qrJavaScript), new PollingWaitCallback(Integer
-                .toString(config.pollingWaitInterval()), "Waiting for Response"))).replaceSharedState(sharedState)
-                .build();
+        sharedState.put(IDX_QR_KEY, qrCodeString);
+
+        ScriptTextOutputCallback qrCodeCallback = new ScriptTextOutputCallback(GenerationUtils
+                .getQRCodeGenerationJavascript("callback_0", qrCodeString,
+                        20, ErrorCorrectionLevel.LOW));
+
+        return send(Arrays.asList(qrCodeCallback, new PollingWaitCallback(Integer
+                .toString(config.pollingWaitInterval() * 1000), "Scan QR Code")))
+                .replaceSharedState(sharedState).build();
     }
 
     private String getQRText(JsonValue sharedState, TenantRepoFactory tenantRepoFactory, String userId)
@@ -198,7 +211,21 @@ public class IdxSponsorUser extends AbstractDecisionNode {
         String qrCodeString = new String(request.getQrCode());
         logger.debug("QR code: " + qrCodeString);
 
-        return qrCodeString;
+        //return qrCodeString;
+
+        //update - AM will build the QR code. Just need to provide the URL string
+        String sponsorshipCodeUrl = "identityx://sponsor?SC=" + request.getSponsorshipToken();
+        String encodedUrl;
+        try {
+            encodedUrl = URLEncoder.encode(sponsorshipCodeUrl, "UTF-8");
+        }
+        catch (UnsupportedEncodingException e) {
+            logger.error("Error encoding QR Code Url");
+            throw new NodeProcessException(e);
+        }
+
+        //try without encoding
+        return sponsorshipCodeUrl;
 
     }
 
