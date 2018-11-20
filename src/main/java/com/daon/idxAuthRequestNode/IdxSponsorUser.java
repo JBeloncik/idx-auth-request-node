@@ -91,9 +91,6 @@ public class IdxSponsorUser extends AbstractDecisionNode {
 
         TenantRepoFactory tenantRepoFactory = getTenantRepoFactory(context);
 
-
-        //TODO - one of these is evaluating to false - resulting in an infinite loop
-        //       since it is resetting the numberOfTimesToPoll each time through
         if (!sharedState.isDefined(IDX_QR_KEY) || !scriptTextOutputCallback.isPresent() || !scriptTextOutputCallback
                 .get().getMessage().equals(sharedState.get(IDX_QR_KEY).asString())) {
 
@@ -131,11 +128,11 @@ public class IdxSponsorUser extends AbstractDecisionNode {
             return goTo(false).replaceSharedState(sharedState).build();
         }
         sharedState.put(IDX_POLL_TIMES, pollTimesRemaining - 1);
-        sharedState.put(IDX_QR_KEY, qrCodeString);
+        String qrCallback = GenerationUtils.getQRCodeGenerationJavascript("callback_0", qrCodeString, 20,
+                ErrorCorrectionLevel.LOW);
+        sharedState.put(IDX_QR_KEY, qrCallback);
 
-        ScriptTextOutputCallback qrCodeCallback = new ScriptTextOutputCallback(GenerationUtils
-                .getQRCodeGenerationJavascript("callback_0", qrCodeString,
-                        20, ErrorCorrectionLevel.LOW));
+        ScriptTextOutputCallback qrCodeCallback = new ScriptTextOutputCallback(qrCallback);
 
         return send(Arrays.asList(qrCodeCallback, new PollingWaitCallback(Integer
                 .toString(config.pollingWaitInterval() * 1000), "Scan QR Code")))

@@ -35,17 +35,17 @@ IdxAuthRequestNode contains the following configurable parameters:
 - **sendPushNotification** whether a push notification should be sent by the IdentityX server
 
 The image below shows an example authentication tree using these nodes.
-![ScreenShot](./example.png)
+![ScreenShot](./images/example.png)
 
 ### Authenticating ###
 The IdxCheckEnrollmentStatus node expects a username to be provided in sharedState. In the example tree above, a simple username collector is used. The IdxAuthRequestNode will then call IdentityX to generate an authentication request for the provided username. Once created, the IdxAuthStatusNode is used to check the status of the authentication request. A polling wait node and retry decision node can be used to poll for the status. Once the user successfully authenticates on their mobile device, the status will change to SUCCESS.
-![ScreenShot](./capture_username.png)
-![ScreenShot](./waiting_for_response.png)
+![ScreenShot](./images/capture_username.png)
+![ScreenShot](./images/waiting_for_response.png)
 
 The user must authenticate using a mobile app which has been built using the IdentityX FIDO Client SDK.
-![ScreenShot](./openam_face.png)
-![ScreenShot](./openam_voice.png)
-![ScreenShot](./openam_finger.png)
+![ScreenShot](./images/openam_face.png)
+![ScreenShot](./images/openam_voice.png)
+![ScreenShot](./images/openam_finger.png)
 
 ## FUTURE UPDATES ##
 - **Sponsorship/Registration** The current version requires the user to be enrolled in IdentityX using the same userId as the identity in OpenAM. The IdxSponsorUser node will add the API calls and logic to allow optional registration in IdentityX as a part of the authentication tree.
