@@ -14,17 +14,15 @@ import com.identityx.clientSDK.queryHolders.ApplicationQueryHolder;
 import com.identityx.clientSDK.queryHolders.PolicyQueryHolder;
 import com.identityx.clientSDK.repositories.ApplicationRepository;
 import com.identityx.clientSDK.repositories.PolicyRepository;
+import com.identityx.clientSDK.repositories.SponsorshipRepository;
 
 import com.google.inject.assistedinject.Assisted;
-import com.identityx.clientSDK.repositories.SponsorshipRepository;
 import com.sun.identity.authentication.callbacks.ScriptTextOutputCallback;
 import com.sun.identity.sm.RequiredValueValidator;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
-import java.net.URLEncoder;
 import javax.inject.Inject;
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.annotations.sm.Attribute;
@@ -58,9 +56,17 @@ public class IdxSponsorUser extends AbstractDecisionNode {
         @Attribute(order = 200, validators = {RequiredValueValidator.class})
         String applicationId();
 
+        /**
+         * The number of seconds to wait between polls
+         * @return the int with number of whole seconds
+         */
         @Attribute(order = 300, validators = {RequiredValueValidator.class})
         int pollingWaitInterval();
 
+        /**
+         * The number of times to poll the status of the sponsorship request
+         * @return the int with the number of times to poll
+         */
         @Attribute(order = 400, validators = {RequiredValueValidator.class})
         int numberOfTimesToPoll();
 
@@ -70,8 +76,9 @@ public class IdxSponsorUser extends AbstractDecisionNode {
     private final Logger logger = LoggerFactory.getLogger("amAuth");
     private final String IDX_QR_KEY = "idx-qr-key";
     private final String IDX_POLL_TIMES = "idx-poll-times-remaining";
+    private final String IDX_SPONSORSHIP_HREF = "idx-sponsorship-href";
 
-
+    private String sponsorshipHref;
 
     /**
      * Create the node.
@@ -100,12 +107,19 @@ public class IdxSponsorUser extends AbstractDecisionNode {
             }
 
             sharedState.put(IDX_POLL_TIMES, config.numberOfTimesToPoll());
-            qrText = getQRText(sharedState, tenantRepoFactory, sharedState.get
-                    (SharedStateConstants.USERNAME).asString());
-            return buildResponse(sharedState, qrText);
+
+            qrText = getQRText(tenantRepoFactory, sharedState.get(SharedStateConstants.USERNAME).asString());
+
+            sharedState.put(IDX_SPONSORSHIP_HREF, sponsorshipHref);
+
+            String qrCallback = GenerationUtils.getQRCodeGenerationJavascript("callback_0", qrText, 20,
+                    ErrorCorrectionLevel.LOW);
+            sharedState.put(IDX_QR_KEY, qrCallback);
+
+            return buildResponse(sharedState);
 
         }
-        if (isEnrolled(sharedState)) {
+        if (isEnrolled(sharedState, tenantRepoFactory)) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Enrollment Successful for: " + sharedState.get
                         (SharedStateConstants.USERNAME).asString());
@@ -115,39 +129,30 @@ public class IdxSponsorUser extends AbstractDecisionNode {
         }
 
         // Build the callbacks and decrement from our configured number of poll times
-        return buildResponse(sharedState, sharedState.get(IDX_QR_KEY).asString());
-
-
+        return buildResponse(sharedState);
 
     }
 
-    private Action buildResponse(JsonValue sharedState, String qrCodeString) {
+    private Action buildResponse(JsonValue sharedState) {
         Integer pollTimesRemaining = sharedState.get(IDX_POLL_TIMES).asInteger();
         if (pollTimesRemaining == 0) {
             // If number of times remaining to poll is 0, send user to false
             return goTo(false).replaceSharedState(sharedState).build();
         }
         sharedState.put(IDX_POLL_TIMES, pollTimesRemaining - 1);
-        String qrCallback = GenerationUtils.getQRCodeGenerationJavascript("callback_0", qrCodeString, 20,
-                ErrorCorrectionLevel.LOW);
-        sharedState.put(IDX_QR_KEY, qrCallback);
 
-        ScriptTextOutputCallback qrCodeCallback = new ScriptTextOutputCallback(qrCallback);
+        ScriptTextOutputCallback qrCodeCallback = new ScriptTextOutputCallback(sharedState.get(IDX_QR_KEY).asString());
 
         return send(Arrays.asList(qrCodeCallback, new PollingWaitCallback(Integer
                 .toString(config.pollingWaitInterval() * 1000), "Scan QR Code")))
                 .replaceSharedState(sharedState).build();
     }
 
-    private String getQRText(JsonValue sharedState, TenantRepoFactory tenantRepoFactory, String userId)
+    private String getQRText(TenantRepoFactory tenantRepoFactory, String userId)
         throws NodeProcessException {
-        //TODO Get the QRText from IdentityX
 
-        //TODO - get these from config
-        String appId = "FIDO";
-        String policyId = "RegPolicy";
-        //String appId = config.applicationId();
-        //String policyId = config.enrollmentPolicyName();
+        String appId = config.applicationId();
+        String policyId = config.enrollmentPolicyName();
 
         //Create Sponsorship
         Sponsorship request = new Sponsorship();
@@ -202,37 +207,55 @@ public class IdxSponsorUser extends AbstractDecisionNode {
             throw new NodeProcessException(e);
         }
 
+        //store the sponsorshipHref so we can query the status
+        sponsorshipHref = request.getHref();
+
         logger.debug("Sponsorship created for userId " + userId);
         logger.debug("Sponsorship Code: " + request.getSponsorshipToken());
 
-        String qrCodeString = new String(request.getQrCode());
-        logger.debug("QR code: " + qrCodeString);
-
-        //return qrCodeString;
-
-        //update - AM will build the QR code. Just need to provide the URL string
+        //AM will build the QR code. Just need to provide the URL string
+        //TODO: update this to support non-FIDO sponsorship as well
         String sponsorshipCodeUrl = "identityx://sponsor?SC=" + request.getSponsorshipToken();
-        String encodedUrl;
-        try {
-            encodedUrl = URLEncoder.encode(sponsorshipCodeUrl, "UTF-8");
+
+        return sponsorshipCodeUrl;
+    }
+
+    private boolean isEnrolled(JsonValue sharedState, TenantRepoFactory tenantRepoFactory) throws NodeProcessException {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Checking Sponsorship Status for: " + sharedState.get
+                    (SharedStateConstants.USERNAME).asString());
         }
-        catch (UnsupportedEncodingException e) {
-            logger.error("Error encoding QR Code Url");
+
+        String href = sharedState.get(IDX_SPONSORSHIP_HREF).toString().replaceAll("\"", "");
+        logger.debug("Href: " + href);
+
+        SponsorshipRepository sponsorshipRepo = tenantRepoFactory.getSponsorshipRepo();
+
+        Sponsorship request;
+        try {
+            request = sponsorshipRepo.get(href);
+        } catch (IdxRestException e) {
+            logger.debug("An exception occurred while attempting to determine the status of the sponsorship " +
+                    "request.  Exception: " + e.getMessage());
             throw new NodeProcessException(e);
         }
 
-        //try without encoding
-        return sponsorshipCodeUrl;
-
-    }
-
-    private boolean isEnrolled(JsonValue sharedState) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Checking Enrollment Status for: " + sharedState.get
-                    (SharedStateConstants.USERNAME).asString());
+        //COMPLETED EXPIRED or PENDING
+        switch (request.getStatus().toString()) {
+            case "PENDING":
+                logger.debug("Sponsorship status PENDING");
+                return false;
+            case "COMPLETED":
+                logger.debug("Sponsorship status COMPLETED");
+                return true;
+            case "EXPIRED":
+                logger.debug("Sponsorship status EXPIRED");
+                return false;
+            default:
+                logger.debug("Sponsorship status not recognized");
+                return false;
         }
-        //TODO Get the enrollment status from Identity X
-        return false;
+
     }
 
 
