@@ -6,6 +6,7 @@ import static com.daon.idxAuthRequestNode.IdxCommon.getTenantRepoFactory;
 
 import com.daon.identityx.rest.model.def.PolicyStatusEnum;
 import com.daon.identityx.rest.model.pojo.Sponsorship;
+import com.daon.identityx.rest.model.pojo.Policy.PolicyTypeEnum;
 import com.identityx.clientSDK.TenantRepoFactory;
 import com.identityx.clientSDK.collections.ApplicationCollection;
 import com.identityx.clientSDK.collections.PolicyCollection;
@@ -114,6 +115,7 @@ public class IdxSponsorUser extends AbstractDecisionNode {
 
             String qrCallback = GenerationUtils.getQRCodeGenerationJavascript("callback_0", qrText, 20,
                     ErrorCorrectionLevel.LOW);
+
             sharedState.put(IDX_QR_KEY, qrCallback);
 
             return buildResponse(sharedState);
@@ -154,6 +156,11 @@ public class IdxSponsorUser extends AbstractDecisionNode {
         String appId = config.applicationId();
         String policyId = config.enrollmentPolicyName();
 
+        //variable to hold the type of policy
+        //IE is legacy IdentityX Enrollment, FR is FIDO Registration
+        //IA and FA are authentication policies and should not be used here for registration
+        PolicyTypeEnum policyType = PolicyTypeEnum.IE;
+
         //Create Sponsorship
         Sponsorship request = new Sponsorship();
 
@@ -174,11 +181,15 @@ public class IdxSponsorUser extends AbstractDecisionNode {
         if(policyCollection.getItems().length > 0) {
             logger.debug("Setting Policy On Sponsorship Request");
             request.setPolicy(policyCollection.getItems()[0]);
+
+            policyType = policyCollection.getItems()[0].getType();
         }
         else {
             logger.error("Could not find an active policy with the PolicyId: " + config.enrollmentPolicyName());
             throw new NodeProcessException("Could not find an active policy with the PolicyId: " + config.enrollmentPolicyName());
         }
+
+
 
         ApplicationRepository applicationRepo = tenantRepoFactory.getApplicationRepo();
         ApplicationQueryHolder applicationQueryHolder = new ApplicationQueryHolder();
@@ -216,6 +227,12 @@ public class IdxSponsorUser extends AbstractDecisionNode {
         //AM will build the QR code. Just need to provide the URL string
         //TODO: update this to support non-FIDO sponsorship as well
         String sponsorshipCodeUrl = "identityx://sponsor?SC=" + request.getSponsorshipToken();
+
+        if (policyType == PolicyTypeEnum.IE) {
+            String authGatewayURL = request.getAuthenticationGatewayURL();
+            sponsorshipCodeUrl = "identityx://sponsor?SC=" + request.getSponsorshipToken() + "&KM=" +
+                    authGatewayURL + "&TC=";
+        }
 
         return sponsorshipCodeUrl;
     }
