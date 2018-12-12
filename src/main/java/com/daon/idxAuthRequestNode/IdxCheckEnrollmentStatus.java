@@ -45,7 +45,7 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
     /**
      * Configuration for the node.
      */
-    interface Config {
+    public interface Config {
 
         /**
          * the path to the jks keystore

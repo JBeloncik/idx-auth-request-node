@@ -51,7 +51,7 @@ public class IdxAuthStatusNode implements Node {
     /**
      * Configuration for the node.
      */
-    interface Config {
+    public interface Config {
     }
 
 
