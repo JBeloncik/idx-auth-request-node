@@ -54,7 +54,7 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
 	/**
 	 * Configuration for the node.
 	 */
-	interface Config {
+	public interface Config {
 		/**
 		 * the IdenitityX policy which should be used for authentication
 		 * @return the policy name

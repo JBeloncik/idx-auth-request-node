@@ -42,7 +42,7 @@ public class IdxSponsorUser extends AbstractDecisionNode {
     /**
      * Configuration for the node.
      */
-    interface Config {
+    public interface Config {
 
         /**
          * the IdenitityX policy which should be used for enrollment
