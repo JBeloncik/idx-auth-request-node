@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
 import javax.inject.Inject;
+
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.annotations.sm.Attribute;
 import org.forgerock.openam.auth.node.api.*;
@@ -41,7 +42,7 @@ public class IdxSponsorUser extends AbstractDecisionNode {
     /**
      * Configuration for the node.
      */
-    interface Config {
+    public interface Config {
 
         /**
          * the IdenitityX policy which should be used for enrollment
@@ -225,7 +226,6 @@ public class IdxSponsorUser extends AbstractDecisionNode {
         logger.debug("Sponsorship Code: " + request.getSponsorshipToken());
 
         //AM will build the QR code. Just need to provide the URL string
-        //TODO: update this to support non-FIDO sponsorship as well
         String sponsorshipCodeUrl = "identityx://sponsor?SC=" + request.getSponsorshipToken();
 
         if (policyType == PolicyTypeEnum.IE) {

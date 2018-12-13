@@ -25,9 +25,11 @@ import com.daon.identityx.rest.model.pojo.AuthenticationRequest;
 import com.identityx.clientSDK.TenantRepoFactory;
 import com.identityx.clientSDK.exceptions.IdxRestException;
 import com.identityx.clientSDK.repositories.AuthenticationRequestRepository;
+
+import java.util.ArrayList;
 import java.util.List;
 import javax.inject.Inject;
-import org.forgerock.guava.common.collect.ImmutableList;
+//import org.forgerock.guava.common.collect.ImmutableList;
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.auth.node.api.*;
 import org.forgerock.util.i18n.PreferredLocales;
@@ -51,7 +53,7 @@ public class IdxAuthStatusNode implements Node {
     /**
      * Configuration for the node.
      */
-    interface Config {
+    public interface Config {
     }
 
 
@@ -119,11 +121,15 @@ public class IdxAuthStatusNode implements Node {
     public static class IdxAuthStatusOutcomeProvider implements OutcomeProvider {
         @Override
         public List<Outcome> getOutcomes(PreferredLocales locales, JsonValue nodeAttributes) {
-            return ImmutableList.of(
-                    new Outcome(SUCCESS, "Success"),
-                    new Outcome(FAILED, "Failed"),
-                    new Outcome(PENDING, "Pending"),
-                    new Outcome(EXPIRED, "Expired"));
+
+            List<Outcome> list = new ArrayList<>();
+
+            list.add(new Outcome(SUCCESS, "Success"));
+            list.add(new Outcome(FAILED, "Failed"));
+            list.add(new Outcome(PENDING, "Pending"));
+            list.add(new Outcome(EXPIRED, "Expired"));
+
+            return list;
         }
     }
 
