@@ -25,11 +25,9 @@ import com.daon.identityx.rest.model.pojo.AuthenticationRequest;
 import com.identityx.clientSDK.TenantRepoFactory;
 import com.identityx.clientSDK.exceptions.IdxRestException;
 import com.identityx.clientSDK.repositories.AuthenticationRequestRepository;
-
 import java.util.ArrayList;
 import java.util.List;
 import javax.inject.Inject;
-//import org.forgerock.guava.common.collect.ImmutableList;
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.auth.node.api.*;
 import org.forgerock.util.i18n.PreferredLocales;
