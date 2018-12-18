@@ -26,6 +26,8 @@ import java.util.Optional;
 import java.util.UUID;
 import javax.inject.Inject;
 
+import javax.security.auth.callback.TextOutputCallback;
+
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.annotations.sm.Attribute;
 import org.forgerock.openam.auth.node.api.*;
@@ -63,14 +65,18 @@ public class IdxSponsorUser extends AbstractDecisionNode {
          * @return the int with number of whole seconds
          */
         @Attribute(order = 300, validators = {RequiredValueValidator.class})
-        int pollingWaitInterval();
+        default int pollingWaitInterval() {
+            return 10;
+        }
 
         /**
          * The number of times to poll the status of the sponsorship request
          * @return the int with the number of times to poll
          */
         @Attribute(order = 400, validators = {RequiredValueValidator.class})
-        int numberOfTimesToPoll();
+        default int numberOfTimesToPoll() {
+            return 30;
+        }
 
     }
 
@@ -146,8 +152,16 @@ public class IdxSponsorUser extends AbstractDecisionNode {
 
         ScriptTextOutputCallback qrCodeCallback = new ScriptTextOutputCallback(sharedState.get(IDX_QR_KEY).asString());
 
+        String step1 = "Step 1: Launch IdentityX app and scan QR code.";
+        String step2 = "Step 2: Register your biometrics.";
+        String step3 = "Step 3: Authenticate with biometrics when prompted in the app.";
+
+        TextOutputCallback textOutputCallback1 = new TextOutputCallback(TextOutputCallback.INFORMATION, step1);
+        TextOutputCallback textOutputCallback2 = new TextOutputCallback(TextOutputCallback.INFORMATION, step2);
+        TextOutputCallback textOutputCallback3 = new TextOutputCallback(TextOutputCallback.INFORMATION, step3);
+
         return send(Arrays.asList(qrCodeCallback, new PollingWaitCallback(Integer
-                .toString(config.pollingWaitInterval() * 1000), "Scan QR Code")))
+                .toString(config.pollingWaitInterval() * 1000), "waiting..."), textOutputCallback1, textOutputCallback2, textOutputCallback3))
                 .replaceSharedState(sharedState).build();
     }
 
