@@ -20,18 +20,54 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <artifactId>auth-tree-node-parent</artifactId>
-        <groupId>org.forgerock.am</groupId>
-        <version>6.0.0</version>
-    </parent>
-
     <artifactId>idxAuthRequestNode</artifactId>
 
     <groupId>com.daon</groupId>
-    <version>1.1.0-SNAPSHOT</version>
+    <version>1.2.0-SNAPSHOT</version>
     <name>Template for an Auth Tree Node maven project</name>
     <description>An Authentication Tree Node for ForgeRock's Identity Platform</description>
+
+    <properties>
+        <am.version>6.5.0.1</am.version>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.forgerock.am</groupId>
+                <artifactId>openam-auth-trees</artifactId>
+                <type>pom</type>
+                <scope>import</scope>
+                <version>${am.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.forgerock.am</groupId>
+            <artifactId>auth-node-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.forgerock.am</groupId>
+            <artifactId>openam-guice-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.forgerock.am</groupId>
+            <artifactId>openam-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.identityx</groupId>
+            <artifactId>IdentityXClientSDK</artifactId>
+            <version>4.4.0.10</version>
+        </dependency>
+    </dependencies>
 
     <repositories>
         <repository>
@@ -43,14 +79,6 @@
             <url>http://maven.forgerock.org/repo/private-releases</url>
         </repository>
     </repositories>
-
-    <dependencies>
-      <dependency>
-        <groupId>com.identityx</groupId>
-        <artifactId>IdentityXClientSDK</artifactId>
-        <version>4.4.0.9</version>
-      </dependency>
-    </dependencies>
 
     <build>
         <plugins>
