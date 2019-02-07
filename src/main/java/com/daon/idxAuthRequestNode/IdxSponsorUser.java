@@ -27,6 +27,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import javax.security.auth.callback.TextOutputCallback;
+import javax.security.auth.callback.ConfirmationCallback;
 
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.annotations.sm.Attribute;
@@ -78,6 +79,15 @@ public class IdxSponsorUser extends AbstractDecisionNode {
             return 30;
         }
 
+        /**
+         * the message displayed to the user below the QR code
+         * @return the messageText
+         */
+        @Attribute(order = 500, validators = {RequiredValueValidator.class})
+        default String messageText() {
+            return "Scan the QR code with your mobile app.";
+        }
+
     }
 
     private final Config config;
@@ -103,6 +113,23 @@ public class IdxSponsorUser extends AbstractDecisionNode {
         Optional<ScriptTextOutputCallback> scriptTextOutputCallback = context.getCallback(ScriptTextOutputCallback
                  .class);
         String qrText;
+
+        //check for callback from the cancel button
+        Optional<ConfirmationCallback> confirmationCallback = context.getCallback(ConfirmationCallback.class);
+        if (confirmationCallback.isPresent()) {
+            if (confirmationCallback.get().getSelectedIndex() == 1) {
+                logger.debug("User clicked Email QR button");
+
+                //the false output should be wired to a node which sends the email
+                return goTo(false).build();
+
+            } else {
+                //user clicked cancel button
+                logger.debug("User clicked cancel");
+                return goTo(true).build();
+            }
+        }
+
 
         TenantRepoFactory tenantRepoFactory = getTenantRepoFactory(context);
 
@@ -152,17 +179,17 @@ public class IdxSponsorUser extends AbstractDecisionNode {
 
         ScriptTextOutputCallback qrCodeCallback = new ScriptTextOutputCallback(sharedState.get(IDX_QR_KEY).asString());
 
-        String step1 = "Step 1: Launch IdentityX app and scan QR code.";
-        String step2 = "Step 2: Register your biometrics.";
-        String step3 = "Step 3: Authenticate with biometrics when prompted in the app.";
+        TextOutputCallback textOutputCallback = new TextOutputCallback(TextOutputCallback.INFORMATION,
+                config.messageText());
 
-        TextOutputCallback textOutputCallback1 = new TextOutputCallback(TextOutputCallback.INFORMATION, step1);
-        TextOutputCallback textOutputCallback2 = new TextOutputCallback(TextOutputCallback.INFORMATION, step2);
-        TextOutputCallback textOutputCallback3 = new TextOutputCallback(TextOutputCallback.INFORMATION, step3);
+        String cancelString = "Cancel";
+        String emailString = "Email QR Code";
+        ConfirmationCallback confirmationCallback = new ConfirmationCallback(ConfirmationCallback.INFORMATION,
+                new String[]{cancelString,emailString}, 0);
 
         return send(Arrays.asList(qrCodeCallback, new PollingWaitCallback(Integer
-                .toString(config.pollingWaitInterval() * 1000), "waiting..."), textOutputCallback1, textOutputCallback2, textOutputCallback3))
-                .replaceSharedState(sharedState).build();
+                .toString(config.pollingWaitInterval() * 1000), "waiting..."), textOutputCallback,
+                confirmationCallback)).replaceSharedState(sharedState).build();
     }
 
     private String getQRText(TenantRepoFactory tenantRepoFactory, String userId)
