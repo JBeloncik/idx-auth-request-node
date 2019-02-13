@@ -30,12 +30,20 @@ import org.forgerock.json.JsonValue;
 import org.forgerock.openam.annotations.sm.Attribute;
 import org.forgerock.openam.sm.annotations.adapters.Password;
 import org.forgerock.openam.auth.node.api.*;
+import org.forgerock.openam.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
 /**
  * A node that checks to see if a provided username is enrolled in IdentityX
+ *
+ * Note on the userId value:
+ * By default, the node will assume the provided username is the userId value from ForgeRock.
+ * If the implementation needs to use a different value for the IdentityX userId, a custom
+ * node will need to be inserted before this one to provide such mapping. Config values in
+ * this node will allow the administrator to define which value in sharedState to use for the
+ * IdentityX userId.
  *
  */
 @Node.Metadata(outcomeProvider  = AbstractDecisionNode.OutcomeProvider.class,
@@ -84,6 +92,13 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
         @Password
         char[] keyPassword();
 
+        /**
+         * the attribute in sharedState to use for IdentityX userId
+         * @return the userIdAttribute
+         */
+        @Attribute(order = 600)
+        String userIdAttribute();
+
     }
 
     private final Config config;
@@ -98,6 +113,13 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
     public Action process(TreeContext context) throws NodeProcessException {
 
         String username = context.sharedState.get(SharedStateConstants.USERNAME).asString();
+
+        //Now check for the userIdAttribute in sharedState
+        //If it is defined, we should use it instead of the AM USERNAME
+        String userIdAttribute = config.userIdAttribute();
+        if (!StringUtils.isBlank(userIdAttribute)) {
+            username = context.sharedState.get(userIdAttribute).asString();
+        }
 
         String keyStore = config.pathToKeyStore();
         String credentialProperties = config.pathToCredentialProperties();
@@ -124,6 +146,7 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
         newState.put("IdxJksPassword", jksPassword);
         newState.put("IdxKeyAlias", keyAlias);
         newState.put("IdxKeyPassword", keyPassword);
+        newState.put("IdxKeyUserName", username);
 
         User user = findUser(username, tenantRepoFactory);
         if (user == null) {

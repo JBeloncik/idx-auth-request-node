@@ -64,11 +64,17 @@ public class IdxAuthStatusNode implements Node {
 
     @Override
     public Action process(TreeContext context) throws NodeProcessException {
-        String username = context.sharedState.get(SharedStateConstants.USERNAME).asString();
+        //String username = context.sharedState.get(SharedStateConstants.USERNAME).asString();
+        String username = context.sharedState.get("IdxKeyUserName").asString();
+        if (username == null) {
+            String errorMessage = "Error: IdxKeyUserName not found in sharedState! Make sure " +
+                    "IdxCheckEnrollmentStatus node is in the tree!";
+            logger.error(errorMessage);
+            throw new NodeProcessException(errorMessage);
+        }
 
         TenantRepoFactory tenantRepoFactory = getTenantRepoFactory(context);
         logger.debug("Connected to the IdentityX Server");
-
 
         //call API to check status. Return true, false or pending
         //get the authHref value from sharedState
@@ -81,13 +87,13 @@ public class IdxAuthStatusNode implements Node {
 
         String status = getAuthenticationRequestStatus(authHref, tenantRepoFactory);
         if(status.equalsIgnoreCase("COMPLETED_SUCCESSFUL")) {
-            return goTo(SUCCESS).replaceSharedState(context.sharedState.copy().put(USERNAME, username)).build();
+            return goTo(SUCCESS).build();
         }
         else if (status.equalsIgnoreCase("PENDING")) {
-            return goTo(PENDING).replaceSharedState(context.sharedState.copy().put(USERNAME, username)).build();
+            return goTo(PENDING).build();
         }
         else if (status.equalsIgnoreCase("EXPIRED")) {
-            return goTo(EXPIRED).replaceSharedState(context.sharedState.copy().put(USERNAME, username)).build();
+            return goTo(EXPIRED).build();
         }
         else {
             return goTo(FAILED).build();

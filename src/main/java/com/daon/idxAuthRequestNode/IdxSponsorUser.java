@@ -133,22 +133,29 @@ public class IdxSponsorUser extends AbstractDecisionNode {
 
         TenantRepoFactory tenantRepoFactory = getTenantRepoFactory(context);
 
+        String username = sharedState.get("IdxKeyUserName").asString();
+        if (username == null) {
+            String errorMessage = "Error: IdxKeyUserName not found in sharedState! Make sure " +
+                    "IdxCheckEnrollmentStatus node is in the tree!";
+            logger.error(errorMessage);
+            throw new NodeProcessException(errorMessage);
+        }
+
         if (!sharedState.isDefined(IDX_QR_KEY) || !scriptTextOutputCallback.isPresent() || !scriptTextOutputCallback
                 .get().getMessage().equals(sharedState.get(IDX_QR_KEY).asString())) {
 
             if (logger.isDebugEnabled()) {
-                logger.debug("Entering into Sponsor User for the first time for user: " + sharedState.get
-                        (SharedStateConstants.USERNAME).asString());
+                logger.debug("Entering into Sponsor User for the first time for user: " + username);
             }
 
             sharedState.put(IDX_POLL_TIMES, config.numberOfTimesToPoll());
 
-            qrText = getQRText(tenantRepoFactory, sharedState.get(SharedStateConstants.USERNAME).asString());
+            qrText = getQRText(tenantRepoFactory, username);
 
             sharedState.put(IDX_SPONSORSHIP_HREF, sponsorshipHref);
 
-            String qrCallback = GenerationUtils.getQRCodeGenerationJavascript("callback_0", qrText, 20,
-                    ErrorCorrectionLevel.LOW);
+            String qrCallback = GenerationUtils.getQRCodeGenerationJavascript("callback_0", qrText,
+                    20, ErrorCorrectionLevel.LOW);
 
             sharedState.put(IDX_QR_KEY, qrCallback);
 
@@ -157,8 +164,7 @@ public class IdxSponsorUser extends AbstractDecisionNode {
         }
         if (isEnrolled(sharedState, tenantRepoFactory)) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Enrollment Successful for: " + sharedState.get
-                        (SharedStateConstants.USERNAME).asString());
+                logger.debug("Enrollment Successful for: " + username);
             }
             // If enrollment is successful send user to next node
             return goTo(true).build();
@@ -281,7 +287,7 @@ public class IdxSponsorUser extends AbstractDecisionNode {
     private boolean isEnrolled(JsonValue sharedState, TenantRepoFactory tenantRepoFactory) throws NodeProcessException {
         if (logger.isDebugEnabled()) {
             logger.debug("Checking Sponsorship Status for: " + sharedState.get
-                    (SharedStateConstants.USERNAME).asString());
+                    ("IdxKeyUserName").asString());
         }
 
         String href = sharedState.get(IDX_SPONSORSHIP_HREF).toString().replaceAll("\"", "");
