@@ -69,7 +69,7 @@ public class IdxAuthRequestNodePlugin extends AbstractNodeAmPlugin {
 	protected Map<String, Iterable<? extends Class<? extends Node>>> getNodesByVersion() {
 		return Collections.singletonMap(IdxAuthRequestNodePlugin.currentVersion, 
 				Arrays.asList(IdxAuthRequestNode.class, IdxAuthStatusNode.class, IdxCheckEnrollmentStatus.class,
-						 IdxSponsorUser.class));
+						 IdxSponsorUser.class, IdxMobileAuthRequestNode.class, IdxMobileValidateAuthRequestNode.class));
 	}
 
     /** 

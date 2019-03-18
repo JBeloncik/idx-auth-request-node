@@ -17,6 +17,7 @@
 
 package com.daon.idxAuthRequestNode;
 
+import static com.daon.idxAuthRequestNode.IdxCommon.IDX_HREF_KEY;
 import static com.daon.idxAuthRequestNode.IdxCommon.getTenantRepoFactory;
 import static com.daon.idxAuthRequestNode.IdxCommon.objectMapper;
 
@@ -36,8 +37,14 @@ import com.identityx.clientSDK.repositories.AuthenticationRequestRepository;
 import com.identityx.clientSDK.repositories.PolicyRepository;
 import com.sun.identity.sm.RequiredValueValidator;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.UUID;
 import javax.inject.Inject;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.TextInputCallback;
+import javax.security.auth.callback.TextOutputCallback;
+
+import org.apache.commons.lang.StringUtils;
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.annotations.sm.Attribute;
 import org.forgerock.openam.auth.node.api.*;
@@ -56,14 +63,14 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
 	 */
 	public interface Config {
 		/**
-		 * the IdenitityX policy which should be used for authentication
+		 * the IdentityX policy which should be used for authentication
 		 * @return the policy name
 		 */
 		@Attribute(order = 100, validators = {RequiredValueValidator.class})
 		String policyName();
 
 		/**
-		 * the IdenitityX application to be used
+		 * the IdentityX application to be used
 		 * @return the application Id
 		 */
 		@Attribute(order = 200, validators = {RequiredValueValidator.class})
@@ -117,7 +124,6 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
 
     	//Place the href value in sharedState
     	logger.debug("Setting auth URL in shared state...");
-		String IDX_HREF_KEY = "idx-auth-ref-shared-state-key";
 		JsonValue newState = context.sharedState.copy().put(IDX_HREF_KEY, authHref);
 
     	return goToNext().replaceSharedState(newState).build();
