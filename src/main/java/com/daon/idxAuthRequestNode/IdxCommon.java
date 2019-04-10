@@ -41,9 +41,9 @@ class IdxCommon {
             case 1:
                 return userCollection.getItems()[0];
             default:
-                String error = "More than one user with the same UserId";
+                String error = "More than one Daon user with the same UserId";
                 logger.error(error);
-                return null;
+                throw new NodeProcessException(error);
         }
     }
 
