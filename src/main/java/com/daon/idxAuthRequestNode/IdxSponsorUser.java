@@ -193,8 +193,8 @@ public class IdxSponsorUser extends AbstractDecisionNode {
         ConfirmationCallback confirmationCallback = new ConfirmationCallback(ConfirmationCallback.INFORMATION,
                 new String[]{cancelString,emailString}, 0);
 
-        return send(Arrays.asList(qrCodeCallback, new PollingWaitCallback(Integer
-                .toString(config.pollingWaitInterval() * 1000), "waiting..."), textOutputCallback,
+        return send(Arrays.asList(textOutputCallback, qrCodeCallback, new PollingWaitCallback(Integer
+                .toString(config.pollingWaitInterval() * 1000), "Waiting for Enrollment to Complete..."),
                 confirmationCallback)).replaceSharedState(sharedState).build();
     }
 
