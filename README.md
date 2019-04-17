@@ -29,6 +29,9 @@ IdxCheckEnrollmentStatus contains the following configurable parameters:
 - **keyAlias** key alias used in the .jks keystore
 - **keyPassword** key password for the .jks keystore
 
+**Note**: The Key Store and Credential Properties files should be retrieved from your Daon Identity X instance. Please 
+reach out to Daon support for help getting these files.
+
 IdxAuthRequestNode contains the following configurable parameters:
 - **policyName** name of the authentication policy which should be used
 - **applicationId** name of the application which should be used
