@@ -18,6 +18,7 @@ class IdxCommon {
     static ObjectMapper objectMapper = new ObjectMapper();
 
     private static final Logger logger = LoggerFactory.getLogger("amAuth");
+    static final String IDX_HREF_KEY = "idx-auth-ref-shared-state-key";
 
     static User findUser(String userId, TenantRepoFactory tenantRepoFactory) throws NodeProcessException {
         UserRepository userRepo = tenantRepoFactory.getUserRepo();

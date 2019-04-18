@@ -17,6 +17,7 @@
 
 package com.daon.idxAuthRequestNode;
 
+import static com.daon.idxAuthRequestNode.IdxCommon.IDX_HREF_KEY;
 import static com.daon.idxAuthRequestNode.IdxCommon.getTenantRepoFactory;
 import static org.forgerock.openam.auth.node.api.Action.goTo;
 import static org.forgerock.openam.auth.node.api.SharedStateConstants.USERNAME;
@@ -78,7 +79,6 @@ public class IdxAuthStatusNode implements Node {
 
         //call API to check status. Return true, false or pending
         //get the authHref value from sharedState
-        String IDX_HREF_KEY = "idx-auth-ref-shared-state-key";
         String authHref = context.sharedState.get(IDX_HREF_KEY).asString();
         if (authHref == null) {
             logger.error("Error: href not found in SharedState!");
