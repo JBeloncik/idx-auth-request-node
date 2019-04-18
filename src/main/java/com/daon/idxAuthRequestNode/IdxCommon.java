@@ -1,5 +1,6 @@
 package com.daon.idxAuthRequestNode;
 
+import com.daon.identityx.rest.model.def.UserStatusEnum;
 import com.daon.identityx.rest.model.pojo.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.identityx.clientSDK.TenantRepoFactory;
@@ -22,6 +23,7 @@ class IdxCommon {
         UserRepository userRepo = tenantRepoFactory.getUserRepo();
         UserQueryHolder holder = new UserQueryHolder();
         holder.getSearchSpec().setUserId(userId);
+        holder.getSearchSpec().setStatus(UserStatusEnum.ACTIVE);
         UserCollection userCollection;
         try {
             userCollection = userRepo.list(holder);
