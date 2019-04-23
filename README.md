@@ -1,4 +1,4 @@
-# IdxAuthRequestNode
+# Daon IdentityX Authentication Nodes
 
 Daon's IdentityX platform is helping customers across the globe ditch passwords and deliver world-class customer experience by leveraging biometrics. This set of nodes allows ForgeRock customers to easily add biometrics to their authentication trees.
 
