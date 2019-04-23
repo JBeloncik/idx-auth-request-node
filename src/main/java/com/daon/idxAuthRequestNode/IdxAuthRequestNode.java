@@ -41,6 +41,7 @@ import javax.inject.Inject;
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.annotations.sm.Attribute;
 import org.forgerock.openam.auth.node.api.*;
+import org.forgerock.openam.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +71,7 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
 		String applicationId();
 
 		/**
-		 * the IdenitityX request type (IX, FI)
+		 * the IdentityX request type (IX, FI)
 		 * @return the request type
 		 */
 		@Attribute(order = 300, validators = {RequiredValueValidator.class})
@@ -86,6 +87,68 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
 		default boolean sendPushNotification() {
 			return true;
 		}
+
+		/**
+		 * the default transaction description
+		 * @return the defaultTransactionDescriptionText
+		 */
+		@Attribute(order = 500, validators = {RequiredValueValidator.class})
+		default String defaultTransactionDescriptionText() {
+			return "ForgeRock Authentication Request";
+		}
+
+		/**
+		 * the sharedState attribute which provides the transaction description text
+		 * @return the transactionDescriptionAttribute
+		 */
+		@Attribute(order = 600)
+		default String transactionDescriptionAttribute() {
+			return "idx-transaction-description-text";
+		}
+
+		/**
+		 * the source of secure transaction data
+		 */
+		@Attribute(order = 700)
+		default SecureTransactionSource secureTransactionSource() {
+			return SecureTransactionSource.NONE;
+		}
+
+		/**
+		 * the type of secure transaction data. Either text/plain or image/png
+		 */
+		@Attribute(order = 800)
+		default SecureTransactionContentType secureTransactionContentType() {
+			return SecureTransactionContentType.TEXT;
+		}
+
+		/**
+		 * the secure transaction data - text or base64 encoded png
+		 * @return the secureTransactionData
+		 */
+		@Attribute(order = 900)
+		default String secureTransactionData() {
+			return "secure transaction data";
+		}
+
+		/**
+		 * the sharedState attribute which provides secure transaction content type
+		 * @return the secureTransactionContentTypeAttribute
+		 */
+		@Attribute(order = 1000)
+		default String secureTransactionContentTypeAttribute() {
+			return "idx-secure-content-type";
+		}
+
+		/**
+		 * the sharedState attribute which provides secure transaction text data
+		 * @return the secureTransactionDataAttribute
+		 */
+		@Attribute(order = 1100)
+		default String secureTransactionDataAttribute() {
+			return "idx-secure-content-data";
+		}
+
 	}
 
 	private final Config config;
@@ -112,7 +175,8 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
 		TenantRepoFactory tenantRepoFactory = getTenantRepoFactory(context);
 		logger.debug("Connected to the IdentityX Server");
 
-		String authHref = generateAuthenticationRequest(user, config.policyName(), tenantRepoFactory);
+		String authHref = generateAuthenticationRequest(user, config.policyName(), tenantRepoFactory,
+				context.sharedState);
 		logger.debug("Auth href: " + authHref);
 
     	//Place the href value in sharedState
@@ -124,7 +188,7 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
     }
 
 	private String generateAuthenticationRequest(User user, String policyName, TenantRepoFactory
-		   tenantRepoFactory) throws NodeProcessException {
+		   tenantRepoFactory, JsonValue sharedState) throws NodeProcessException {
 
 		AuthenticationRequest request = new AuthenticationRequest();
 		if (user == null) {
@@ -175,7 +239,18 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
 			throw new NodeProcessException("No Application was found with this name " + appId);
 		}
 
-		request.setDescription("OpenAM has Requested an Authentication.");
+		//Set the transaction description text from either sharedState or the node config
+		String transactionDescriptionText = config.defaultTransactionDescriptionText();
+
+		//Check sharedState for the descriptionText
+		String txnRequestAttribute = config.transactionDescriptionAttribute();
+		if (!StringUtils.isBlank(txnRequestAttribute)) {
+			String textFromSharedState = sharedState.get(txnRequestAttribute).asString();
+			if (!StringUtils.isBlank(textFromSharedState)) {
+				transactionDescriptionText = textFromSharedState;
+			}
+		}
+		request.setDescription(transactionDescriptionText);
 
 		String txnRequestType = "FI";
 		if (!config.isFidoRequest()) {
@@ -184,6 +259,56 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
 		request.setType(txnRequestType);
 		request.setOneTimePasswordEnabled(false);
 		request.setAuthenticationRequestId(UUID.randomUUID().toString());
+
+		//Secure transaction content
+		//Only valid for Fido transactions
+		if (config.isFidoRequest() && (config.secureTransactionSource() != SecureTransactionSource.NONE)) {
+
+			String secureTxnType = "text/plain";
+			String secureTxnData = "default secure transaction data";
+
+			switch(config.secureTransactionSource()) {
+				case CONFIG:
+					secureTxnData = config.secureTransactionData();
+					if (config.secureTransactionContentType() == SecureTransactionContentType.IMAGE) {
+						secureTxnType = "image/png";
+					}
+					break;
+				case SHAREDSTATE:
+					String secureContentTypeAttr = config.secureTransactionContentTypeAttribute();
+					String secureContentAttr = config.secureTransactionDataAttribute();
+					if (StringUtils.isEmpty(secureContentTypeAttr)) {
+						logger.debug("secureTransactionContentTypeAttribute is empty! Using default text/plain");
+					} else {
+						if (sharedState.get(secureContentTypeAttr).asString().equals("image/png")) {
+							secureTxnType = "image/png";
+						}
+					}
+
+					if (StringUtils.isEmpty(secureContentAttr)) {
+						logger.debug("secureTransactionDataAttribute is empty! Using default text.");
+					} else {
+						if (!StringUtils.isEmpty(sharedState.get(secureContentAttr).asString())) {
+							secureTxnData = sharedState.get(secureContentAttr).asString();
+							logger.debug("Secure data from sharedState: " + secureTxnData);
+						}
+					}
+					break;
+			}
+
+			switch (secureTxnType) {
+				case "image/png":
+					request.setSecureTransactionContentType("image/png");
+					request.setSecureImageTransactionContent(secureTxnData);
+					break;
+				default:
+					request.setSecureTransactionContentType("text/plain");
+					request.setSecureTextTransactionContent(secureTxnData);
+					break;
+
+			}
+
+		}
 
 		if (config.sendPushNotification()) {
 			request.setPushNotificationType(TransactionPushNotificationTypeEnum.VERIFY_WITH_CONFIRMATION);
@@ -196,9 +321,30 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
 			logger.debug("Error creating authentication request for user: " + user.getUserId());
 			throw new NodeProcessException(e);
 		}
-		logger.debug("Added an authentication request, - authRequestId: {}" + request.getId());
+		logger.debug("Added an authentication request, - authRequestId: " + request.getId());
 		return request.getHref();
 	}
 
+	/**
+	 * enum definition for secure transaction data configuration
+	 */
+	public enum SecureTransactionSource {
+		/** None. Do not use secure transactions details. **/
+		NONE,
+		/** Set in config by admin **/
+		CONFIG,
+		/** Set in SharedState **/
+		SHAREDSTATE
+	}
+
+	/**
+	 * enum definition for secure transaction content type
+	 */
+	public enum SecureTransactionContentType {
+		/** text/plain **/
+		TEXT,
+		/** image/png **/
+		IMAGE
+	}
 
 }
