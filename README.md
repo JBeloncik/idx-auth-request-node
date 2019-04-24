@@ -1,4 +1,4 @@
-# IdxAuthRequestNode
+# Daon IdentityX Authentication Nodes
 
 Daon's IdentityX platform is helping customers across the globe ditch passwords and deliver world-class customer experience by leveraging biometrics. This set of nodes allows ForgeRock customers to easily add biometrics to their authentication trees.
 
@@ -12,37 +12,53 @@ Copy the jar file into the ../web-container/webapps/openam/WEB-INF/lib directory
 
 ## USING THE NODES IN YOUR TREE ##
 
-### There are 4 nodes included ###
-- **IdxCheckEnrollmentStatus** This node makes a REST API call to IdentityX to ensure the username provided is enrolled. This node contains the configuration parameters for the IdentityX Rest Services, so it is required to be added to the tree in order for the other nodes to work.
-- **IdxAuthRequestNode** This node makes a REST API call to IdentityX to generate and authentication request.
-- **IdxAuthStatusNode** This node makes a REST API call to IdentityX to check the status of an authentication request.
-- **IdxSponsorUser** This node will add sponsorship/registration in a future release.
+### There are 6 nodes included ###
+- **IdentityX Check Enrollment Status** This node makes a REST API call to IdentityX to ensure the username provided is enrolled. This node contains the configuration parameters for the IdentityX Rest Services, so it is required to be added to the tree in order for the other nodes to work.
+- **IdentityX Auth Request Initiator** This node makes a REST API call to IdentityX to generate an authentication request for an 
+out of band authentication flow.
+- **IdentityX Auth Request Decision** This node makes a REST API call to IdentityX to check the status of an authentication request
+ for an out of band authentication flow.
+- **IdentityX Mobile Auth Request** This node makes a REST API call to IdentityX to generate an authentication 
+request for an end user authenticating on a mobile device, and passes it to the mobile device.
+- **IdentityX Mobile Auth Request Validate** This node accepts a signed authentication request from a mobile device 
+ and makes a REST API call to IdentityX to validate the signed authentication request.
+- **IdentityX Sponsor User** This node enables sponsorship (enrollment) of an end user.
 
 ### CONNECTING TO AN IDENTITYX SERVER ###
 The nodes must be configured to connect to an IdentityX server. Contact your Daon representative for connection details.
 
 ### Configuration Parameters ###
-IdxCheckEnrollmentStatus contains the following configurable parameters:
+IdentityX Check Enrollment Status contains the following configurable parameters:
 - **pathToKeyStore** full path to the .jks keystore file
 - **pathToCredentialProperties** full path to the credential.properties file
 - **jksPassword** password for the .jks keystore file
 - **keyAlias** key alias used in the .jks keystore
 - **keyPassword** key password for the .jks keystore
 
-**Note**: The Key Store and Credential Properties files should be retrieved from your Daon Identity X instance. Please 
+**Note**: The Key Store and Credential Properties files should be retrieved from your Daon IdentityX instance. Please 
 reach out to Daon support for help getting these files.
 
-IdxAuthRequestNode contains the following configurable parameters:
+IdentityX Auth Request Initiator contains the following configurable parameters:
 - **policyName** name of the authentication policy which should be used
 - **applicationId** name of the application which should be used
 - **isFidoRequest** whether to generate a FIDO or traditional IdentityX authentication request
 - **sendPushNotification** whether a push notification should be sent by the IdentityX server
 
-The image below shows an example authentication tree using these nodes.
+IdentityX Mobile Auth Request contains the following configurable parameters:
+- **policyName** name of the authentication policy which should be used
+- **applicationId** name of the application which should be used
+
+The image below shows an example authentication tree using IdentityX nodes in an out of band flow.
 ![ScreenShot](./images/example.png)
 
-### Authenticating ###
-The IdxCheckEnrollmentStatus node expects a username to be provided in sharedState. In the example tree above, a simple username collector is used. The IdxAuthRequestNode will then call IdentityX to generate an authentication request for the provided username. Once created, the IdxAuthStatusNode is used to check the status of the authentication request. A polling wait node and retry decision node can be used to poll for the status. Once the user successfully authenticates on their mobile device, the status will change to SUCCESS.
+The image below shows an example authentication tree using IdentityX nodes in a mobile flow.
+![ScreenShot](./images/example_mobile.png)
+
+The image below shows an example enrollment and authentication tree using IdentityX nodes in an out of band flow.
+![ScreenShot](./images/sponsorship_example.png)
+
+### Authenticating  ###
+The IdentityX Check Enrollment Status node expects a username to be provided in sharedState. In the example tree above, a simple username collector is used. The IdentityX Auth Request Initiator will then call IdentityX to generate an authentication request for the provided username. Once created, the IdentityX Auth Request Decision is used to check the status of the authentication request. A polling wait node and retry decision node can be used to poll for the status. Once the user successfully authenticates on their mobile device, the status will change to SUCCESS.
 ![ScreenShot](./images/capture_username.png)
 ![ScreenShot](./images/waiting_for_response.png)
 
@@ -51,13 +67,17 @@ The user must authenticate using a mobile app which has been built using the Ide
 ![ScreenShot](./images/openam_voice.png)
 ![ScreenShot](./images/openam_finger.png)
 
-## FUTURE UPDATES ##
-- **Sponsorship/Registration** The current version requires the user to be enrolled in IdentityX using the same userId as the identity in OpenAM. The IdxSponsorUser node will add the API calls and logic to allow optional registration in IdentityX as a part of the authentication tree.
+## Enrollment ##
+The IdentityX Sponsor User node adds API calls and logic to allow optional registration in IdentityX as a part of the 
+authentication tree. This allows the end user to scan a QR code with their mobile device camera to create a new identity in IdentityX and enroll biometrics.
+
+This builds upon the existing flow shown above used for authentication.
+![ScreenShot](./images/openam_sponsorship.png)
+
+
+
+
 
 ## SUPPORT ##
 For more information on this node or to request a demonstration, please contact:
-Frank Gasparovic - frank.gasparovic@forgerock.com
-or
-Jason Beloncik - jason.beloncik@daon.com
-
-# idx-auth-request-node
+Frank Gasparovic - frank.gasparovic@forgerock.com or Jason Beloncik - jason.beloncik@daon.com
