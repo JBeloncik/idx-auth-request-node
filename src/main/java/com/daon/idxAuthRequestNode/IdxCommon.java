@@ -85,13 +85,8 @@ class IdxCommon {
             throw new NodeProcessException("Key password not found in SharedState!");
         }
 
-        try {
-            tenantRepoFactory = IdxTenantRepoFactorySingleton.getInstance(pathToKeyStore, jksPassword,
-                    pathToCredentialProperties, keyAlias, keyPassword).tenantRepoFactory;
-        } catch (IdxRestException e) {
-            logger.debug("An exception occurred using the tenantRepoFactorySingleton");
-            throw new NodeProcessException("Error using tenantRepoFactorySingleton");
-        }
+        tenantRepoFactory = IdxTenantRepoFactorySingleton.getInstance(pathToKeyStore, jksPassword,
+                pathToCredentialProperties, keyAlias, keyPassword).tenantRepoFactory;
 
         if (tenantRepoFactory != null) {
             logger.debug("Connected to the IdentityX Server");

@@ -19,20 +19,26 @@ package com.daon.idxAuthRequestNode;
 
 import static com.daon.idxAuthRequestNode.IdxCommon.findUser;
 
+import org.forgerock.json.JsonValue;
+import org.forgerock.openam.annotations.sm.Attribute;
+import org.forgerock.openam.auth.node.api.AbstractDecisionNode;
+import org.forgerock.openam.auth.node.api.Action;
+import org.forgerock.openam.auth.node.api.Node;
+import org.forgerock.openam.auth.node.api.NodeProcessException;
+import org.forgerock.openam.auth.node.api.SharedStateConstants;
+import org.forgerock.openam.auth.node.api.TreeContext;
+import org.forgerock.openam.sm.annotations.adapters.Password;
+import org.forgerock.openam.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.daon.identityx.rest.model.pojo.User;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.assistedinject.Assisted;
 import com.identityx.clientSDK.TenantRepoFactory;
-import com.identityx.clientSDK.exceptions.IdxRestException;
 import com.sun.identity.sm.RequiredValueValidator;
+
 import javax.inject.Inject;
-import org.forgerock.json.JsonValue;
-import org.forgerock.openam.annotations.sm.Attribute;
-import org.forgerock.openam.sm.annotations.adapters.Password;
-import org.forgerock.openam.auth.node.api.*;
-import org.forgerock.openam.utils.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**
@@ -127,17 +133,12 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
         String keyAlias = config.keyAlias();
         String keyPassword = String.valueOf(config.keyPassword());
 
-        TenantRepoFactory tenantRepoFactory = null;
-        try {
-            tenantRepoFactory = IdxTenantRepoFactorySingleton.getInstance(keyStore, jksPassword, credentialProperties,
-                    keyAlias, keyPassword).tenantRepoFactory;
-        } catch (IdxRestException e) {
-            logger.debug("An exception occurred using the tenantRepoFactorySingleton");
-            throw new NodeProcessException("Error using tenantRepoFactorySingleton");
-        }
+        TenantRepoFactory tenantRepoFactory = IdxTenantRepoFactorySingleton.getInstance(keyStore, jksPassword,
+                                                                                        credentialProperties,
+                                                                                        keyAlias, keyPassword)
+                                                                                        .tenantRepoFactory;
 
         logger.debug("Connected to the IdentityX Server");
-
 
         //set all config params in SharedState
         JsonValue newState = context.sharedState.copy();
