@@ -118,14 +118,22 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
     @Override
     public Action process(TreeContext context) throws NodeProcessException {
 
-        String username = context.sharedState.get(SharedStateConstants.USERNAME).asString();
-
-        //Now check for the userIdAttribute in sharedState
+        String userIdAttribute;
+        //Check for the userIdAttribute in sharedState
         //If it is defined, we should use it instead of the AM USERNAME
-        String userIdAttribute = config.userIdAttribute();
-        if (!StringUtils.isBlank(userIdAttribute)) {
-            username = context.sharedState.get(userIdAttribute).asString();
+        if (StringUtils.isBlank(config.userIdAttribute())) {
+            userIdAttribute =  SharedStateConstants.USERNAME;
+        } else {
+            userIdAttribute = config.userIdAttribute();
         }
+
+        JsonValue usernameJson = context.sharedState.get(userIdAttribute);
+
+        if (usernameJson.isNull() || StringUtils.isBlank(usernameJson.asString())) {
+            throw new NodeProcessException("Username attribute " + userIdAttribute + " is either null or empty");
+        }
+
+        String username = usernameJson.asString();
 
         String keyStore = config.pathToKeyStore();
         String credentialProperties = config.pathToCredentialProperties();
