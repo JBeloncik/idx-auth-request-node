@@ -1,12 +1,28 @@
 package com.daon.idxAuthRequestNode;
 
+import static com.daon.idxAuthRequestNode.IdxCommon.getTenantRepoFactory;
+import static com.daon.idxAuthRequestNode.IdxSponsorUser.*;
+import static org.forgerock.openam.auth.node.api.Action.goTo;
 import static org.forgerock.openam.auth.node.api.Action.send;
 
-import static com.daon.idxAuthRequestNode.IdxCommon.getTenantRepoFactory;
+import org.forgerock.json.JsonValue;
+import org.forgerock.openam.annotations.sm.Attribute;
+import org.forgerock.openam.auth.node.api.Action;
+import org.forgerock.openam.auth.node.api.Node;
+import org.forgerock.openam.auth.node.api.NodeProcessException;
+import org.forgerock.openam.auth.node.api.TreeContext;
+import org.forgerock.openam.authentication.callbacks.PollingWaitCallback;
+import org.forgerock.openam.utils.qr.ErrorCorrectionLevel;
+import org.forgerock.openam.utils.qr.GenerationUtils;
+import org.forgerock.util.i18n.PreferredLocales;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.daon.identityx.rest.model.def.PolicyStatusEnum;
-import com.daon.identityx.rest.model.pojo.Sponsorship;
 import com.daon.identityx.rest.model.pojo.Policy.PolicyTypeEnum;
+import com.daon.identityx.rest.model.pojo.Sponsorship;
+import com.google.common.collect.ImmutableList;
+import com.google.inject.assistedinject.Assisted;
 import com.identityx.clientSDK.TenantRepoFactory;
 import com.identityx.clientSDK.collections.ApplicationCollection;
 import com.identityx.clientSDK.collections.PolicyCollection;
@@ -16,31 +32,20 @@ import com.identityx.clientSDK.queryHolders.PolicyQueryHolder;
 import com.identityx.clientSDK.repositories.ApplicationRepository;
 import com.identityx.clientSDK.repositories.PolicyRepository;
 import com.identityx.clientSDK.repositories.SponsorshipRepository;
-
-import com.google.inject.assistedinject.Assisted;
 import com.sun.identity.authentication.callbacks.ScriptTextOutputCallback;
 import com.sun.identity.sm.RequiredValueValidator;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.ResourceBundle;
 import java.util.UUID;
 import javax.inject.Inject;
-
-import javax.security.auth.callback.TextOutputCallback;
 import javax.security.auth.callback.ConfirmationCallback;
+import javax.security.auth.callback.TextOutputCallback;
 
-import org.forgerock.json.JsonValue;
-import org.forgerock.openam.annotations.sm.Attribute;
-import org.forgerock.openam.auth.node.api.*;
-import org.forgerock.openam.authentication.callbacks.PollingWaitCallback;
-import org.forgerock.openam.utils.qr.GenerationUtils;
-import org.forgerock.openam.utils.qr.ErrorCorrectionLevel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-@Node.Metadata(outcomeProvider  = AbstractDecisionNode.OutcomeProvider.class,
-        configClass      = IdxSponsorUser.Config.class)
-public class IdxSponsorUser extends AbstractDecisionNode {
+@Node.Metadata(outcomeProvider = IdxSponsorOutcomeProvider.class, configClass = Config.class)
+public class IdxSponsorUser implements Node {
 
     /**
      * Configuration for the node.
@@ -48,14 +53,14 @@ public class IdxSponsorUser extends AbstractDecisionNode {
     public interface Config {
 
         /**
-         * the IdenitityX policy which should be used for enrollment
+         * the IdentityX policy which should be used for enrollment
          * @return the policy name
          */
         @Attribute(order = 100, validators = {RequiredValueValidator.class})
         String enrollmentPolicyName();
 
         /**
-         * the IdenitityX application to be used
+         * the IdentityX application to be used
          * @return the application Id
          */
         @Attribute(order = 200, validators = {RequiredValueValidator.class})
@@ -95,6 +100,8 @@ public class IdxSponsorUser extends AbstractDecisionNode {
     private final String IDX_QR_KEY = "idx-qr-key";
     private final String IDX_POLL_TIMES = "idx-poll-times-remaining";
     private final String IDX_SPONSORSHIP_HREF = "idx-sponsorship-href";
+    private static final String BUNDLE = IdxSponsorUser.class.getName();
+
 
     private String sponsorshipHref;
 
@@ -110,23 +117,24 @@ public class IdxSponsorUser extends AbstractDecisionNode {
     @Override
     public Action process(TreeContext context) throws NodeProcessException {
         JsonValue sharedState = context.sharedState;
-        Optional<ScriptTextOutputCallback> scriptTextOutputCallback = context.getCallback(ScriptTextOutputCallback
-                 .class);
         String qrText;
 
         //check for callback from the cancel button
         Optional<ConfirmationCallback> confirmationCallback = context.getCallback(ConfirmationCallback.class);
+
         if (confirmationCallback.isPresent()) {
-            if (confirmationCallback.get().getSelectedIndex() == 1) {
-                logger.debug("User clicked Email QR button");
-
-                //the false output should be wired to a node which sends the email
-                return goTo(false).build();
-
-            } else {
+            int index = confirmationCallback.get().getSelectedIndex();
+            if (index == 0) {
                 //user clicked cancel button
                 logger.debug("User clicked cancel");
-                return goTo(true).build();
+                sharedState.remove(IDX_POLL_TIMES);
+                sharedState.remove(IDX_SPONSORSHIP_HREF);
+                sharedState.remove(IDX_QR_KEY);
+                return goTo(IdxSponsorOutcome.CANCEL.name()).replaceSharedState(sharedState).build();
+            } else if (index == 1) {
+                logger.debug("User clicked Email QR button");
+                //the false output should be wired to a node which sends the email
+                return goTo(IdxSponsorOutcome.EMAIL.name()).build();
             }
         }
 
@@ -141,9 +149,7 @@ public class IdxSponsorUser extends AbstractDecisionNode {
             throw new NodeProcessException(errorMessage);
         }
 
-        if (!sharedState.isDefined(IDX_QR_KEY) || !scriptTextOutputCallback.isPresent() || !scriptTextOutputCallback
-                .get().getMessage().equals(sharedState.get(IDX_QR_KEY).asString())) {
-
+        if (!sharedState.isDefined(IDX_QR_KEY)) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Entering into Sponsor User for the first time for user: " + username);
             }
@@ -167,7 +173,7 @@ public class IdxSponsorUser extends AbstractDecisionNode {
                 logger.debug("Enrollment Successful for: " + username);
             }
             // If enrollment is successful send user to next node
-            return goTo(true).build();
+            return goTo(IdxSponsorOutcome.TRUE.name()).build();
         }
 
         // Build the callbacks and decrement from our configured number of poll times
@@ -179,7 +185,7 @@ public class IdxSponsorUser extends AbstractDecisionNode {
         Integer pollTimesRemaining = sharedState.get(IDX_POLL_TIMES).asInteger();
         if (pollTimesRemaining == 0) {
             // If number of times remaining to poll is 0, send user to false
-            return goTo(false).replaceSharedState(sharedState).build();
+            return goTo(IdxSponsorOutcome.FALSE.name()).replaceSharedState(sharedState).build();
         }
         sharedState.put(IDX_POLL_TIMES, pollTimesRemaining - 1);
 
@@ -192,10 +198,12 @@ public class IdxSponsorUser extends AbstractDecisionNode {
         String emailString = "Email QR Code";
         ConfirmationCallback confirmationCallback = new ConfirmationCallback(ConfirmationCallback.INFORMATION,
                 new String[]{cancelString,emailString}, 0);
+        confirmationCallback.setSelectedIndex(2);
 
-        return send(Arrays.asList(textOutputCallback, qrCodeCallback, new PollingWaitCallback(Integer
-                .toString(config.pollingWaitInterval() * 1000), "Waiting for Enrollment to Complete..."),
-                confirmationCallback)).replaceSharedState(sharedState).build();
+        return send(Arrays.asList(textOutputCallback, qrCodeCallback,
+                                  new PollingWaitCallback(Integer.toString(config.pollingWaitInterval() * 1000),
+                           "Waiting for Enrollment to Complete..."), confirmationCallback))
+                                .replaceSharedState(sharedState).build();
     }
 
     private String getQRText(TenantRepoFactory tenantRepoFactory, String userId)
@@ -320,6 +328,44 @@ public class IdxSponsorUser extends AbstractDecisionNode {
                 return false;
         }
 
+    }
+
+    /**
+     * The possible outcomes for the IdxSponsor node.
+     */
+    public enum IdxSponsorOutcome {
+        /**
+         * Successful enrollment.
+         */
+        TRUE,
+        /**
+         * Failed enrollment.
+         */
+        FALSE,
+        /**
+         * The end user pressed the cancel button
+         */
+        CANCEL,
+        /**
+         * The end user pressed the email button
+         */
+        EMAIL
+    }
+
+    /**
+     * Defines the possible outcomes from IdxSponsorUser node
+     */
+    public static class IdxSponsorOutcomeProvider implements org.forgerock.openam.auth.node.api.OutcomeProvider {
+        @Override
+        public List<Outcome> getOutcomes(PreferredLocales locales, JsonValue nodeAttributes) {
+            ResourceBundle bundle = locales.getBundleInPreferredLocale(BUNDLE,
+                                                                       IdxSponsorOutcomeProvider.class.getClassLoader());
+            return ImmutableList.of(
+                    new Outcome(IdxSponsorOutcome.TRUE.name(), bundle.getString("trueOutcome")),
+                    new Outcome(IdxSponsorOutcome.FALSE.name(), bundle.getString("falseOutcome")),
+                    new Outcome(IdxSponsorOutcome.CANCEL.name(), bundle.getString("cancelOutcome")),
+                    new Outcome(IdxSponsorOutcome.EMAIL.name(), bundle.getString("emailOutcome")));
+        }
     }
 
 
