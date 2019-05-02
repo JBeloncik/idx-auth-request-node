@@ -185,6 +185,9 @@ public class IdxSponsorUser implements Node {
         Integer pollTimesRemaining = sharedState.get(IDX_POLL_TIMES).asInteger();
         if (pollTimesRemaining == 0) {
             // If number of times remaining to poll is 0, send user to false
+            sharedState.remove(IDX_POLL_TIMES);
+            sharedState.remove(IDX_SPONSORSHIP_HREF);
+            sharedState.remove(IDX_QR_KEY);
             return goTo(IdxSponsorOutcome.FALSE.name()).replaceSharedState(sharedState).build();
         }
         sharedState.put(IDX_POLL_TIMES, pollTimesRemaining - 1);
