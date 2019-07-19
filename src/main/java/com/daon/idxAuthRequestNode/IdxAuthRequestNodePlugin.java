@@ -57,7 +57,7 @@ import org.forgerock.openam.plugins.PluginException;
  */
 public class IdxAuthRequestNodePlugin extends AbstractNodeAmPlugin {
 
-	static private String currentVersion = "1.0.0";
+	static String currentVersion = "1.3.0";
 	
     /** 
      * Specify the Map of list of node classes that the plugin is providing. These will then be installed and
@@ -105,6 +105,11 @@ public class IdxAuthRequestNodePlugin extends AbstractNodeAmPlugin {
      */	
 	@Override
 	public void upgrade(String fromVersion) throws PluginException {
+		
+		//Force Upgrade of Nodes, requires changing currentVersion=
+		pluginTools.upgradeAuthNode(IdxCheckEnrollmentStatus.class);
+		pluginTools.upgradeAuthNode(IdxMobileAuthRequestNode.class);
+		pluginTools.upgradeAuthNode(IdxMobileValidateAuthRequestNode.class);
 		super.upgrade(fromVersion);
 	}
 

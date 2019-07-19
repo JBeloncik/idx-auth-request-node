@@ -16,10 +16,15 @@ import org.slf4j.LoggerFactory;
 class IdxCommon {
     
     static ObjectMapper objectMapper = new ObjectMapper();
-
+    
     private static final Logger logger = LoggerFactory.getLogger("amAuth");
+    
     static final String IDX_HREF_KEY = "idx-auth-ref-shared-state-key";
-
+    static final String IDX_USER_KEY = "Daon_User";
+    
+    static final String IDX_AUTH_REQUEST_TYPE = "FI";
+    static final String AUTH_RESPONSE_NAME =  "fidoAuthenticationResponse";
+    
     static User findUser(String userId, TenantRepoFactory tenantRepoFactory) throws NodeProcessException {
         UserRepository userRepo = tenantRepoFactory.getUserRepo();
         UserQueryHolder holder = new UserQueryHolder();
