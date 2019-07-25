@@ -20,8 +20,6 @@ package com.daon.idxAuthRequestNode;
 import static com.daon.idxAuthRequestNode.IdxCommon.IDX_HREF_KEY;
 import static com.daon.idxAuthRequestNode.IdxCommon.getTenantRepoFactory;
 import static org.forgerock.openam.auth.node.api.Action.goTo;
-import static org.forgerock.openam.auth.node.api.SharedStateConstants.USERNAME;
-
 import com.daon.identityx.rest.model.pojo.AuthenticationRequest;
 import com.identityx.clientSDK.TenantRepoFactory;
 import com.identityx.clientSDK.exceptions.IdxRestException;

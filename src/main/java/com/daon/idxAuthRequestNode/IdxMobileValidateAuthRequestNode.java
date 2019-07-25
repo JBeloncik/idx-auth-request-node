@@ -59,7 +59,7 @@ public class IdxMobileValidateAuthRequestNode extends AbstractDecisionNode {
 		boolean isJsonOk = false;
 
 		try {
-			obj = new JSONObject(context.sharedState.get(IdxCommon.AUTH_RESPONSE_NAME).asString());
+			obj = new JSONObject(context.sharedState.get(IdxCommon.IDX_AUTH_RESPONSE_UAF).asString());
 			logger.debug("Json={}", test);
 		} catch (JSONException e) {
 			logger.warn("JSONException1", e);
@@ -68,7 +68,7 @@ public class IdxMobileValidateAuthRequestNode extends AbstractDecisionNode {
 		if (obj != null) {
 			
 			try {
-				test = obj.getString(IdxCommon.AUTH_RESPONSE_NAME);
+				test = obj.getString(IdxCommon.IDX_AUTH_RESPONSE_UAF);
 				isJsonOk = true;
 			} catch (JSONException e) {
 				logger.warn("JSONException2", e);
@@ -78,7 +78,7 @@ public class IdxMobileValidateAuthRequestNode extends AbstractDecisionNode {
 		logger.debug("Test={}", test);
 
 		if (TextUtils.isEmpty(test) || !isJsonOk) {
-			test = context.sharedState.get(IdxCommon.AUTH_RESPONSE_NAME).asString();
+			test = context.sharedState.get(IdxCommon.IDX_AUTH_RESPONSE_UAF).asString();
 			logger.debug("Using-Postman={}", test);
 		}
 

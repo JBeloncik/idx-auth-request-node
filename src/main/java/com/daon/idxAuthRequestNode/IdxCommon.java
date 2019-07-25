@@ -22,8 +22,13 @@ class IdxCommon {
     static final String IDX_HREF_KEY = "idx-auth-ref-shared-state-key";
     static final String IDX_USER_KEY = "Daon_User";
     
+    static final String IDX_USER_HREF_KEY = "idx-user-href-shared-state-key";
+    static final String IDX_USER_INTERNAL_ID_KEY = "idx-user-internal-id-shared-state-key";
+    static final String IDX_USER_ID_KEY = "idx-user-id-shared-state-key";
+    static final String IDX_AUTH_RESPONSE_UAF =  "idx-fido-auth-response-shared-state-key";
+    
     static final String IDX_AUTH_REQUEST_TYPE = "FI";
-    static final String AUTH_RESPONSE_NAME =  "fidoAuthenticationResponse";
+    
     
     static User findUser(String userId, TenantRepoFactory tenantRepoFactory) throws NodeProcessException {
         UserRepository userRepo = tenantRepoFactory.getUserRepo();
@@ -85,13 +90,13 @@ class IdxCommon {
         }
 
         String keyPassword = context.sharedState.get("IdxKeyPassword").asString();
+        
         if (keyPassword == null) {
             logger.error("Error: Key Password not found in SharedState!");
             throw new NodeProcessException("Key password not found in SharedState!");
         }
 
-        tenantRepoFactory = IdxTenantRepoFactorySingleton.getInstance(pathToKeyStore, jksPassword,
-                pathToCredentialProperties, keyAlias, keyPassword).tenantRepoFactory;
+        tenantRepoFactory = IdxTenantRepoFactorySingleton.getInstance(pathToKeyStore, jksPassword, pathToCredentialProperties, keyAlias, keyPassword).tenantRepoFactory;
 
         if (tenantRepoFactory != null) {
             logger.debug("Connected to the IdentityX Server");

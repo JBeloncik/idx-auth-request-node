@@ -1,8 +1,5 @@
 package com.daon.idxAuthRequestNode;
 
-import static com.daon.idxAuthRequestNode.IdxCommon.IDX_HREF_KEY;
-import static com.daon.idxAuthRequestNode.IdxCommon.getTenantRepoFactory;
-import static com.daon.idxAuthRequestNode.IdxCommon.objectMapper;
 import static org.forgerock.json.JsonValue.field;
 import static org.forgerock.json.JsonValue.json;
 import static org.forgerock.json.JsonValue.object;
@@ -28,7 +25,6 @@ import com.identityx.clientSDK.TenantRepoFactory;
 import com.identityx.clientSDK.exceptions.IdxRestException;
 import com.sun.identity.sm.RequiredValueValidator;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -72,7 +68,7 @@ public class IdxMobileAuthRequestNode extends SingleOutcomeNode {
 		@Attribute(order = 300, validators = { RequiredValueValidator.class })
 		default String transactionDescription() {
 			return "OpenAM has Requested an Authentication";
-		};
+		}
 	}
 
 	private final Config config;
@@ -88,40 +84,38 @@ public class IdxMobileAuthRequestNode extends SingleOutcomeNode {
 
 	@Override
 	public Action process(TreeContext context) throws NodeProcessException {
+		
 		Optional<TextOutputCallback> textOutputCallbackOptional = context.getCallback(TextOutputCallback.class);
 		Optional<TextInputCallback> textInputCallbackOptional = context.getCallback(TextInputCallback.class);
+		
 		JsonValue sharedState = context.sharedState;
 		
-		String fidoAuthenticationRequest = context.sharedState.get("fidoAuthenticationRequest").asString();
-		String authHref = context.sharedState.get(IDX_HREF_KEY).asString();
-
+		String authHref = sharedState.get(IdxCommon.IDX_HREF_KEY).asString();
 		logger.debug("AuthenticationRequestHref={}", authHref);
-		logger.debug("AuthenticationRequest={}", fidoAuthenticationRequest);
 		
 		if (context.hasCallbacks() && textOutputCallbackOptional.isPresent() && textInputCallbackOptional.isPresent()) {	
 			logger.debug("==> Going to Next State ==>");
-			sharedState.put("fidoAuthenticationResponse", textInputCallbackOptional.get().getText());
-			return goToNext().replaceSharedState(sharedState).build();
+			return goToNext()
+				.replaceSharedState(sharedState.put(IdxCommon.IDX_AUTH_RESPONSE_UAF, textInputCallbackOptional.get().getText()))
+				.build();
 		}
 		
-		User user;
-
-		try {
-			user = objectMapper.readValue(context.sharedState.get(IdxCommon.IDX_USER_KEY).asString(), User.class);
-		} catch (IOException e) {
-			throw new NodeProcessException(e);
+		String userId = context.sharedState.get(IdxCommon.IDX_USER_ID_KEY).asString();
+		
+		if (TextUtils.isBlank(userId)) {
+			throw new NodeProcessException("UserId cannot be blank");
 		}
 		
 		AuthenticationRequest finalRequest = null;
 		
 		if (TextUtils.isBlank(authHref)) {
-			finalRequest = createAuthRequest(context, user.getUserId());
+			finalRequest = createAuthRequest(context, userId);
 		} else {
 			finalRequest = getAuthRequest(context, authHref);
 		}
 		
 		List<Callback> callbacks = new ArrayList<>();
-
+		
 		final JsonValue json = json(object(
 				field("href", finalRequest.getHref()), 
 				field("id", finalRequest.getId()),
@@ -131,10 +125,8 @@ public class IdxMobileAuthRequestNode extends SingleOutcomeNode {
 		callbacks.add(new TextInputCallback("Please provide the Daon Fido Response", "{}"));
 		callbacks.add(new TextOutputCallback(TextOutputCallback.INFORMATION, json.toString()));
 
-		return Action.send(callbacks).replaceSharedState(
-				sharedState
-				.put("fidoAuthenticationRequest", json.toString())
-				.put(IdxCommon.IDX_HREF_KEY, finalRequest.getHref()))
+		return Action.send(callbacks)
+				.replaceSharedState(context.sharedState.put(IdxCommon.IDX_HREF_KEY, finalRequest.getHref()))
 				.build();
 	}
 	
@@ -163,7 +155,7 @@ public class IdxMobileAuthRequestNode extends SingleOutcomeNode {
 		
 		logger.debug("UserId={} ApplicationId={} Policy={}", request.getUser().getUserId(), request.getApplication().getApplicationId(), request.getPolicy().getPolicyId());
 		
-		TenantRepoFactory tenantRepoFactory = getTenantRepoFactory(context);
+		TenantRepoFactory tenantRepoFactory = IdxCommon.getTenantRepoFactory(context);
 		
 		try {
 			request = tenantRepoFactory.getAuthenticationRequestRepo().create(request);
@@ -180,7 +172,7 @@ public class IdxMobileAuthRequestNode extends SingleOutcomeNode {
 		
 		logger.info("Entering getAuthRequest");
 		
-		TenantRepoFactory tenantRepoFactory = getTenantRepoFactory(context);
+		TenantRepoFactory tenantRepoFactory = IdxCommon.getTenantRepoFactory(context);
 		
 		logger.debug("AuthRequestHref={}", authRequestHref);
 		

@@ -17,7 +17,6 @@
 
 package com.daon.idxAuthRequestNode;
 
-import static com.daon.idxAuthRequestNode.IdxCommon.IDX_HREF_KEY;
 import static com.daon.idxAuthRequestNode.IdxCommon.getTenantRepoFactory;
 import static com.daon.idxAuthRequestNode.IdxCommon.objectMapper;
 
@@ -37,14 +36,8 @@ import com.identityx.clientSDK.repositories.AuthenticationRequestRepository;
 import com.identityx.clientSDK.repositories.PolicyRepository;
 import com.sun.identity.sm.RequiredValueValidator;
 import java.io.IOException;
-import java.util.Optional;
 import java.util.UUID;
 import javax.inject.Inject;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.TextInputCallback;
-import javax.security.auth.callback.TextOutputCallback;
-
-import org.apache.commons.lang.StringUtils;
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.annotations.sm.Attribute;
 import org.forgerock.openam.auth.node.api.*;
@@ -110,7 +103,7 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
     public Action process(TreeContext context) throws NodeProcessException {
     	User user;
 		try {
-			user = objectMapper.readValue(context.sharedState.get("Daon_User").asString(), User.class);
+			user = objectMapper.readValue(context.sharedState.get(IdxCommon.IDX_USER_KEY).asString(), User.class);
 		} catch (IOException e) {
 			logger.error("Can't find user in SharedState");
 			throw new NodeProcessException(e);
@@ -124,7 +117,7 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
 
     	//Place the href value in sharedState
     	logger.debug("Setting auth URL in shared state...");
-		JsonValue newState = context.sharedState.copy().put(IDX_HREF_KEY, authHref);
+		JsonValue newState = context.sharedState.copy().put(IdxCommon.IDX_HREF_KEY, authHref);
 
     	return goToNext().replaceSharedState(newState).build();
     }
