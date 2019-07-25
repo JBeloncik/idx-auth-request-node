@@ -115,13 +115,22 @@ public class IdxMobileAuthRequestNode extends SingleOutcomeNode {
 		}
 		
 		List<Callback> callbacks = new ArrayList<>();
+		String adosAuthResponse = sharedState.get(IdxCommon.IDX_AUTH_RESPONSE_UAF).asString();
+		
 		
 		final JsonValue json = json(object(
 				field("href", finalRequest.getHref()), 
 				field("id", finalRequest.getId()),
 				field("fidoChallenge", finalRequest.getFidoChallenge()),
 				field("fidoAuthenticationRequest", finalRequest.getFidoAuthenticationRequest())));
-
+		
+		if (!(TextUtils.isEmpty(adosAuthResponse))) {
+			logger.debug("ADoS Tree Operation Adding fidoAuthenticationResponse to callback json");
+			json.put("fidoAuthenticationResponse", adosAuthResponse);			
+			json.put("fidoResponseCode", finalRequest.getFidoResponseCode());
+			json.put("fidoResponseMsg", finalRequest.getFidoResponseMsg());
+		}
+		
 		callbacks.add(new TextInputCallback("Please provide the Daon Fido Response", "{}"));
 		callbacks.add(new TextOutputCallback(TextOutputCallback.INFORMATION, json.toString()));
 

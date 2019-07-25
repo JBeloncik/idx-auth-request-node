@@ -115,6 +115,8 @@ public class IdxMobileValidateAuthRequestNode extends AbstractDecisionNode {
 			if (request.getStatus() == nodeConfig.expectedStatus()) {
 				logger.debug("Success Status=[{}]", nodeConfig.expectedStatus());
 				context.sharedState.put(IdxCommon.IDX_HREF_KEY, request.getHref());
+				//Required for 'Daon ADoS SRP Passcode Authenticator' [D409#9302|D409#8302]
+				context.sharedState.put(IdxCommon.IDX_AUTH_RESPONSE_UAF, request.getFidoAuthenticationResponse());
 				return true;
 			}
 			
