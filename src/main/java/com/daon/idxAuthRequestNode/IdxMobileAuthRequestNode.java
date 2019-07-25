@@ -13,8 +13,6 @@ import org.forgerock.openam.auth.node.api.NodeProcessException;
 import org.forgerock.openam.auth.node.api.SharedStateConstants;
 import org.forgerock.openam.auth.node.api.SingleOutcomeNode;
 import org.forgerock.openam.auth.node.api.TreeContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.daon.identityx.rest.model.pojo.Application;
 import com.daon.identityx.rest.model.pojo.AuthenticationRequest;
@@ -72,7 +70,8 @@ public class IdxMobileAuthRequestNode extends SingleOutcomeNode {
 	}
 
 	private final Config config;
-	private final Logger logger = LoggerFactory.getLogger("amAuth");
+	private static LoggerWrapper logger = new LoggerWrapper();
+	
 
 	/**
 	 * Create the node.

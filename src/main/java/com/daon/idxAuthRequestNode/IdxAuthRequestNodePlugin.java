@@ -23,7 +23,6 @@ import org.forgerock.openam.auth.node.api.AbstractNodeAmPlugin;
 import org.forgerock.openam.auth.node.api.Node;
 import org.forgerock.openam.plugins.PluginException;
 
-
 /**
  * Definition of an <a href="https://backstage.forgerock.com/docs/am/6/apidocs/org/forgerock/openam/auth/node/api/AbstractNodeAmPlugin.html">AbstractNodeAmPlugin</a>. 
  * Implementations can use {@code @Inject} setters to get access to APIs 
@@ -70,29 +69,6 @@ public class IdxAuthRequestNodePlugin extends AbstractNodeAmPlugin {
 		return Collections.singletonMap(IdxAuthRequestNodePlugin.currentVersion, 
 				Arrays.asList(IdxAuthRequestNode.class, IdxAuthStatusNode.class, IdxCheckEnrollmentStatus.class,
 						 IdxSponsorUser.class, IdxMobileAuthRequestNode.class, IdxMobileValidateAuthRequestNode.class));
-	}
-
-    /** 
-     * Handle plugin installation. This method will only be called once, on first AM startup once the plugin
-     * is included in the classpath. The {@link #onStartup()} method will be called after this one.
-     * 
-     * No need to implement this unless your AuthNode has specific requirements on install.
-     */
-	@Override
-	public void onInstall() throws PluginException {
-		super.onInstall();
-	}
-
-    /** 
-     * Handle plugin startup. This method will be called every time AM starts, after {@link #onInstall()},
-     * {@link #onAmUpgrade(String, String)} and {@link #upgrade(String)} have been called (if relevant).
-     * 
-     * No need to implement this unless your AuthNode has specific requirements on startup.
-     *
-	 */
-	@Override
-	public void onStartup() throws PluginException {
-		super.onStartup();
 	}
 
     /** 

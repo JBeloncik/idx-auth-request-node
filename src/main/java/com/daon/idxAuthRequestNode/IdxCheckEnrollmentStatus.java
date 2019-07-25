@@ -29,9 +29,6 @@ import org.forgerock.openam.auth.node.api.SharedStateConstants;
 import org.forgerock.openam.auth.node.api.TreeContext;
 import org.forgerock.openam.sm.annotations.adapters.Password;
 import org.forgerock.openam.utils.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.daon.identityx.rest.model.pojo.User;
 import com.google.inject.assistedinject.Assisted;
 import com.identityx.clientSDK.TenantRepoFactory;
@@ -107,7 +104,7 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
     }
 
     private final Config config;
-    private final Logger logger = LoggerFactory.getLogger("amAuth");
+    private static LoggerWrapper logger = new LoggerWrapper();
 
     @Inject
     public IdxCheckEnrollmentStatus(@Assisted Config config) {
@@ -144,7 +141,7 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
 
         logger.debug("Connected to the IdentityX Server");
 
-        //TODO: Is there a better way? [Set all config params in SharedState]
+        //Set all config params in SharedState
         JsonValue newState = context.sharedState.copy();
         
         newState.put("IdxPathToKeyStore", keyStore);

@@ -15,9 +15,6 @@ import org.forgerock.openam.auth.node.api.NodeProcessException;
 import org.forgerock.openam.auth.node.api.TreeContext;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.daon.identityx.rest.model.def.AuthenticationRequestStatusEnum;
 import com.daon.identityx.rest.model.pojo.AuthenticationRequest;
 import com.google.inject.assistedinject.Assisted;
@@ -31,7 +28,7 @@ import com.sun.identity.sm.RequiredValueValidator;
 @Node.Metadata(outcomeProvider = AbstractDecisionNode.OutcomeProvider.class, configClass = IdxMobileValidateAuthRequestNode.Config.class)
 public class IdxMobileValidateAuthRequestNode extends AbstractDecisionNode {
 
-	private final Logger logger = LoggerFactory.getLogger("amAuth");
+	private static LoggerWrapper logger = new LoggerWrapper();
 	
 	public interface Config {
 		

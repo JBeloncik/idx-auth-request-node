@@ -10,14 +10,12 @@ import com.identityx.clientSDK.queryHolders.UserQueryHolder;
 import com.identityx.clientSDK.repositories.UserRepository;
 import org.forgerock.openam.auth.node.api.NodeProcessException;
 import org.forgerock.openam.auth.node.api.TreeContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 class IdxCommon {
     
     static ObjectMapper objectMapper = new ObjectMapper();
     
-    private static final Logger logger = LoggerFactory.getLogger("amAuth");
+    private static LoggerWrapper logger = new LoggerWrapper();
     
     static final String IDX_HREF_KEY = "idx-auth-ref-shared-state-key";
     static final String IDX_USER_KEY = "Daon_User";

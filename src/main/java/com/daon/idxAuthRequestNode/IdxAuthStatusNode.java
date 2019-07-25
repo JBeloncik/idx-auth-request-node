@@ -30,8 +30,6 @@ import javax.inject.Inject;
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.auth.node.api.*;
 import org.forgerock.util.i18n.PreferredLocales;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A node that checks user authentication status in IdentityX
@@ -45,7 +43,7 @@ public class IdxAuthStatusNode implements Node {
     private static final String FAILED = "Failed";
     private static final String EXPIRED = "Expired";
 
-    private final Logger logger = LoggerFactory.getLogger("amAuth");
+    private static LoggerWrapper logger = new LoggerWrapper();
 
     /**
      * Configuration for the node.

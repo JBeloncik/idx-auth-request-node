@@ -41,14 +41,11 @@ import javax.inject.Inject;
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.annotations.sm.Attribute;
 import org.forgerock.openam.auth.node.api.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A node that initiates an authentication request to IdentityX
  */
-@Node.Metadata(outcomeProvider  = SingleOutcomeNode.OutcomeProvider.class,
-               configClass      = IdxAuthRequestNode.Config.class)
+@Node.Metadata(outcomeProvider = SingleOutcomeNode.OutcomeProvider.class, configClass = IdxAuthRequestNode.Config.class)
 public class IdxAuthRequestNode extends SingleOutcomeNode {
 
 	/**
@@ -89,7 +86,7 @@ public class IdxAuthRequestNode extends SingleOutcomeNode {
 	}
 
 	private final Config config;
-	private final Logger logger = LoggerFactory.getLogger("amAuth");
+	private static LoggerWrapper logger = new LoggerWrapper();
 
     /**
      * Create the node.

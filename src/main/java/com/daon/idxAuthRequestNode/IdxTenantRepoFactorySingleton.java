@@ -15,22 +15,24 @@ class IdxTenantRepoFactorySingleton {
 
     private static IdxTenantRepoFactorySingleton tenantRepoInstance = null;
 
-    TenantRepoFactory tenantRepoFactory;
+    public TenantRepoFactory tenantRepoFactory;
 
-    private IdxTenantRepoFactorySingleton(String keyStorePath, String jksPassword, String credentialPropertiesPath,
-                                String keyAlias, String keyPass) throws NodeProcessException {
+    private IdxTenantRepoFactorySingleton(String keyStorePath, String jksPassword, String credentialPropertiesPath, String keyAlias, String keyPass) throws NodeProcessException {
         InputStream keyStore;
         InputStream credentialProperties;
+        
         try {
             keyStore = new FileInputStream(new File(keyStorePath));
         } catch (FileNotFoundException e) {
             throw new NodeProcessException("Unable to find keystore file at: " + keyStorePath, e);
         }
+        
         try {
             credentialProperties = new FileInputStream(new File(credentialPropertiesPath));
         } catch (FileNotFoundException e) {
             throw new NodeProcessException("Unable to find credential properties file at: " + credentialPropertiesPath, e);
         }
+        
         try {
             tenantRepoFactory = new TenantRepoFactory(new EncryptedKeyPropFileCredentialsProvider(keyStore, jksPassword, credentialProperties, keyAlias, keyPass));
         } catch (IdxRestException | ClientInitializationException e) {
@@ -44,7 +46,7 @@ class IdxTenantRepoFactorySingleton {
         if(tenantRepoInstance == null) {
             tenantRepoInstance = new IdxTenantRepoFactorySingleton(keyStorePath, jksPassword, credentialPropertiesPath, keyAlias, keyPass);
         }
+        
         return tenantRepoInstance;
     }
-
 }
