@@ -56,26 +56,26 @@ public class IdxMobileValidateAuthRequestNode extends AbstractDecisionNode {
 		boolean isJsonOk = false;
 
 		try {
-			obj = new JSONObject(context.sharedState.get(IdxCommon.IDX_AUTH_RESPONSE_UAF).asString());
+			obj = new JSONObject(context.sharedState.get(IdxCommon.IDX_AUTH_RESPONSE_KEY).asString());
 			logger.debug("Json={}", obj.toString());
 		} catch (JSONException e) {
-			logger.warn("Cannot cast SharedState Key = [{}] to JSON Object = {}", IdxCommon.IDX_AUTH_RESPONSE_UAF, e.getMessage());
+			logger.warn("Cannot cast SharedState Key = [{}] to JSON Object = {}", IdxCommon.IDX_AUTH_RESPONSE_KEY, e.getMessage());
 		}
 
 		if (obj != null) {
 			
 			try {
-				test = obj.getString(IdxCommon.IDX_AUTH_RESPONSE_UAF);
+				test = obj.getString(IdxCommon.IDX_AUTH_RESPONSE_PROPERTY_NAME);
 				isJsonOk = true;
 			} catch (JSONException e) {
-				logger.warn("Cannot cast JSON Object Property = [{}] to JSON Object = {}", IdxCommon.IDX_AUTH_RESPONSE_UAF, e.getMessage());
+				logger.warn("Cannot cast JSON Object Property = [{}] to JSON Object = {}", IdxCommon.IDX_AUTH_RESPONSE_PROPERTY_NAME, e.getMessage());
 			}
 		}
 
 		logger.debug("Test={}", test);
 
 		if (TextUtils.isEmpty(test) || !isJsonOk) {
-			test = context.sharedState.get(IdxCommon.IDX_AUTH_RESPONSE_UAF).asString();
+			test = context.sharedState.get(IdxCommon.IDX_AUTH_RESPONSE_KEY).asString();
 			logger.debug("Using-Postman={}", test);
 		}
 
@@ -113,7 +113,7 @@ public class IdxMobileValidateAuthRequestNode extends AbstractDecisionNode {
 				logger.debug("Success Status=[{}]", nodeConfig.expectedStatus());
 				context.sharedState.put(IdxCommon.IDX_HREF_KEY, request.getHref());
 				//Required for 'Daon ADoS SRP Passcode Authenticator' [D409#9302|D409#8302]
-				context.sharedState.put(IdxCommon.IDX_AUTH_RESPONSE_UAF, request.getFidoAuthenticationResponse());
+				context.sharedState.put(IdxCommon.IDX_AUTH_RESPONSE_KEY, request.getFidoAuthenticationResponse());
 				return true;
 			}
 			

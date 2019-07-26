@@ -28,8 +28,9 @@ class IdxCommon {
     static final String IDX_USER_HREF_KEY = "idx-user-href-shared-state-key";
     static final String IDX_USER_INTERNAL_ID_KEY = "idx-user-internal-id-shared-state-key";
     static final String IDX_USER_ID_KEY = "idx-user-id-shared-state-key";
-    static final String IDX_AUTH_RESPONSE_UAF =  "idx-fido-auth-response-shared-state-key";
+    static final String IDX_AUTH_RESPONSE_KEY =  "idx-fido-auth-response-shared-state-key";
     
+    static final String IDX_AUTH_RESPONSE_PROPERTY_NAME = "fidoAuthenticationResponse";
     static final String IDX_AUTH_REQUEST_TYPE = "FI";
     
     

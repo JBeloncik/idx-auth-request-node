@@ -95,7 +95,7 @@ public class IdxMobileAuthRequestNode extends SingleOutcomeNode {
 		if (context.hasCallbacks() && textOutputCallbackOptional.isPresent() && textInputCallbackOptional.isPresent()) {	
 			logger.debug("==> Going to Next State ==>");
 			return goToNext()
-				.replaceSharedState(sharedState.put(IdxCommon.IDX_AUTH_RESPONSE_UAF, textInputCallbackOptional.get().getText()))
+				.replaceSharedState(sharedState.put(IdxCommon.IDX_AUTH_RESPONSE_KEY, textInputCallbackOptional.get().getText()))
 				.build();
 		}
 		
@@ -114,7 +114,7 @@ public class IdxMobileAuthRequestNode extends SingleOutcomeNode {
 		}
 		
 		List<Callback> callbacks = new ArrayList<>();
-		String adosAuthResponse = sharedState.get(IdxCommon.IDX_AUTH_RESPONSE_UAF).asString();
+		String adosAuthResponse = sharedState.get(IdxCommon.IDX_AUTH_RESPONSE_KEY).asString();
 		
 		
 		final JsonValue json = json(object(
