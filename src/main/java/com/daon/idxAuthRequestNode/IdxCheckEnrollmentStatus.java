@@ -136,10 +136,10 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
         String jksPassword = String.valueOf(config.jksPassword());
         String keyAlias = config.keyAlias();
         String keyPassword = String.valueOf(config.keyPassword());
+        
+        logger.debug("IdxCheckEnrollmentStatus::Configuration[PathToKeyStore={}, PathToCredentialProperties={}, KeyAlias={}]", keyStore, credentialProperties, keyAlias);
 
-        TenantRepoFactory tenantRepoFactory = IdxTenantRepoFactorySingleton.getInstance(keyStore, jksPassword, credentialProperties, keyAlias, keyPassword).tenantRepoFactory;
-
-        logger.debug("Connected to the IdentityX Server");
+        TenantRepoFactory tenantRepoFactory = IdxTenantRepoFactorySingleton.getInstance(keyStore, jksPassword, credentialProperties, keyAlias, keyPassword).tenantRepoFactory;        
 
         //Set all config params in SharedState
         JsonValue newState = context.sharedState.copy();
@@ -154,10 +154,11 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
         User user = findUser(username, tenantRepoFactory);
         
         if (user == null) {
-            logger.debug("User with ID [{}] not found in IdentityX!", username);
+            logger.error("FATAL: UserID=[{}] not found in IdentityX", username);
             return goTo(false).replaceSharedState(newState).build();
         }
-
+        
+        logger.debug("Connected to the IdentityX Server @ [{}]", IdxCommon.getServerName(user.getHref()));
         logger.debug("User found with ID {}", username);
         
         newState.put(IdxCommon.IDX_USER_HREF_KEY, user.getHref());
@@ -168,7 +169,4 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
 
         return goTo(true).replaceSharedState(newState).build();
     }
-
-
-
 }

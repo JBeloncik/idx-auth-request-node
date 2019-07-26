@@ -61,7 +61,7 @@ public class IdxAuthStatusNode implements Node {
 
     @Override
     public Action process(TreeContext context) throws NodeProcessException {
-        //String username = context.sharedState.get(SharedStateConstants.USERNAME).asString();
+
         String username = context.sharedState.get("IdxKeyUserName").asString();
         if (username == null) {
             String errorMessage = "Error: IdxKeyUserName not found in sharedState! Make sure " +
@@ -71,17 +71,20 @@ public class IdxAuthStatusNode implements Node {
         }
 
         TenantRepoFactory tenantRepoFactory = getTenantRepoFactory(context);
-        logger.debug("Connected to the IdentityX Server");
 
         //call API to check status. Return true, false or pending
         //get the authHref value from sharedState
         String authHref = context.sharedState.get(IDX_HREF_KEY).asString();
+        
         if (authHref == null) {
             logger.error("Error: href not found in SharedState!");
             throw new NodeProcessException("Unable to authenticate - HREF not found!");
         }
 
         String status = getAuthenticationRequestStatus(authHref, tenantRepoFactory);
+        
+        logger.debug("Connected to the IdentityX Server @ [{}]", IdxCommon.getServerName(authHref));
+        
         if(status.equalsIgnoreCase("COMPLETED_SUCCESSFUL")) {
             return goTo(SUCCESS).build();
         }

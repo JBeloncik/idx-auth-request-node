@@ -57,9 +57,9 @@ public class IdxMobileValidateAuthRequestNode extends AbstractDecisionNode {
 
 		try {
 			obj = new JSONObject(context.sharedState.get(IdxCommon.IDX_AUTH_RESPONSE_UAF).asString());
-			logger.debug("Json={}", test);
+			logger.debug("Json={}", obj.toString());
 		} catch (JSONException e) {
-			logger.warn("JSONException1", e);
+			logger.warn("Cannot cast SharedState Key = [{}] to JSON Object = {}", IdxCommon.IDX_AUTH_RESPONSE_UAF, e.getMessage());
 		}
 
 		if (obj != null) {
@@ -68,7 +68,7 @@ public class IdxMobileValidateAuthRequestNode extends AbstractDecisionNode {
 				test = obj.getString(IdxCommon.IDX_AUTH_RESPONSE_UAF);
 				isJsonOk = true;
 			} catch (JSONException e) {
-				logger.warn("JSONException2", e);
+				logger.warn("Cannot cast JSON Object Property = [{}] to JSON Object = {}", IdxCommon.IDX_AUTH_RESPONSE_UAF, e.getMessage());
 			}
 		}
 

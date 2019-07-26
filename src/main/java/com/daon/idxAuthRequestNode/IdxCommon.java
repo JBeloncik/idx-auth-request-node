@@ -8,8 +8,13 @@ import com.identityx.clientSDK.collections.UserCollection;
 import com.identityx.clientSDK.exceptions.IdxRestException;
 import com.identityx.clientSDK.queryHolders.UserQueryHolder;
 import com.identityx.clientSDK.repositories.UserRepository;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import org.forgerock.openam.auth.node.api.NodeProcessException;
 import org.forgerock.openam.auth.node.api.TreeContext;
+import org.forgerock.openam.utils.StringUtils;
 
 class IdxCommon {
     
@@ -18,7 +23,7 @@ class IdxCommon {
     private static LoggerWrapper logger = new LoggerWrapper();
     
     static final String IDX_HREF_KEY = "idx-auth-ref-shared-state-key";
-    static final String IDX_USER_KEY = "Daon_User";
+    static final String IDX_USER_KEY = "idx-user-object-shared-state-key";
     
     static final String IDX_USER_HREF_KEY = "idx-user-href-shared-state-key";
     static final String IDX_USER_INTERNAL_ID_KEY = "idx-user-internal-id-shared-state-key";
@@ -97,12 +102,44 @@ class IdxCommon {
         tenantRepoFactory = IdxTenantRepoFactorySingleton.getInstance(pathToKeyStore, jksPassword, pathToCredentialProperties, keyAlias, keyPassword).tenantRepoFactory;
 
         if (tenantRepoFactory != null) {
-            logger.debug("Connected to the IdentityX Server");
+            logger.debug("Successfully Initialised the TenantRepoFactory");
         } else {
-            logger.debug("Error creating tenantRepoFactory");
+        	logger.error("Failure to Initialised the TenantRepoFactory");
             throw new NodeProcessException("Error creating tenantRepoFactory");
         }
 
         return tenantRepoFactory;
     }
+    
+    static String getServerName(String href) {
+
+		logger.info("Entering getServerName");
+
+		String server = null;
+
+		if (StringUtils.isNotEmpty(href)) {
+
+			URL url;
+
+			try {
+
+				url = new URL(href);
+
+				String host = url.getHost();
+				int port = url.getPort();
+
+				if (port == -1) {
+					server = String.format("%s", host);
+				} else {
+					server = String.format("%s:%d", host, port);
+				}
+
+			} catch (MalformedURLException ex) {
+				logger.error("getServerName Exception", ex);
+			}
+		}
+
+		logger.info("Exiting getServerName");
+		return server;
+	}
 }
