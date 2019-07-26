@@ -29,6 +29,7 @@
 
     <properties>
         <am.version>6.5.0.1</am.version>
+        <identityx.version>4.5.2.4</identityx.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -65,7 +66,7 @@
         <dependency>
             <groupId>com.identityx</groupId>
             <artifactId>IdentityXClientSDK</artifactId>
-            <version>4.4.0.10</version>
+            <version>${identityx.version}</version>
         </dependency>
         
     </dependencies>
