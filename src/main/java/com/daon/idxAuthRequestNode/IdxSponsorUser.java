@@ -15,9 +15,6 @@ import org.forgerock.openam.authentication.callbacks.PollingWaitCallback;
 import org.forgerock.openam.utils.qr.ErrorCorrectionLevel;
 import org.forgerock.openam.utils.qr.GenerationUtils;
 import org.forgerock.util.i18n.PreferredLocales;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.daon.identityx.rest.model.def.PolicyStatusEnum;
 import com.daon.identityx.rest.model.pojo.Policy.PolicyTypeEnum;
 import com.daon.identityx.rest.model.pojo.Sponsorship;
@@ -96,7 +93,7 @@ public class IdxSponsorUser implements Node {
     }
 
     private final Config config;
-    private final Logger logger = LoggerFactory.getLogger("amAuth");
+    private static LoggerWrapper logger = new LoggerWrapper();
     private final String IDX_QR_KEY = "idx-qr-key";
     private final String IDX_POLL_TIMES = "idx-poll-times-remaining";
     private final String IDX_SPONSORSHIP_HREF = "idx-sponsorship-href";
@@ -150,9 +147,9 @@ public class IdxSponsorUser implements Node {
         }
 
         if (!sharedState.isDefined(IDX_QR_KEY)) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Entering into Sponsor User for the first time for user: " + username);
-            }
+
+           logger.debug("Entering into Sponsor User for the first time for user: [{}]", username);
+
 
             sharedState.put(IDX_POLL_TIMES, config.numberOfTimesToPoll());
 
@@ -169,9 +166,7 @@ public class IdxSponsorUser implements Node {
 
         }
         if (isEnrolled(sharedState, tenantRepoFactory)) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Enrollment Successful for: " + username);
-            }
+            logger.debug("Enrollment Successful for: [{}]", username);
             // If enrollment is successful send user to next node
             return goTo(IdxSponsorOutcome.TRUE.name()).build();
         }
@@ -296,10 +291,8 @@ public class IdxSponsorUser implements Node {
     }
 
     private boolean isEnrolled(JsonValue sharedState, TenantRepoFactory tenantRepoFactory) throws NodeProcessException {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Checking Sponsorship Status for: " + sharedState.get
-                    ("IdxKeyUserName").asString());
-        }
+
+        logger.debug("Checking Sponsorship Status for: [{}]", sharedState.get("IdxKeyUserName").asString());
 
         String href = sharedState.get(IDX_SPONSORSHIP_HREF).toString().replaceAll("\"", "");
         logger.debug("Href: " + href);

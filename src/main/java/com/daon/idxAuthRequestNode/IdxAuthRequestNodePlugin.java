@@ -23,7 +23,6 @@ import org.forgerock.openam.auth.node.api.AbstractNodeAmPlugin;
 import org.forgerock.openam.auth.node.api.Node;
 import org.forgerock.openam.plugins.PluginException;
 
-
 /**
  * Definition of an <a href="https://backstage.forgerock.com/docs/am/6/apidocs/org/forgerock/openam/auth/node/api/AbstractNodeAmPlugin.html">AbstractNodeAmPlugin</a>. 
  * Implementations can use {@code @Inject} setters to get access to APIs 
@@ -57,7 +56,7 @@ import org.forgerock.openam.plugins.PluginException;
  */
 public class IdxAuthRequestNodePlugin extends AbstractNodeAmPlugin {
 
-	static private String currentVersion = "1.0.0";
+	static String currentVersion = "1.3.0";
 	
     /** 
      * Specify the Map of list of node classes that the plugin is providing. These will then be installed and
@@ -73,29 +72,6 @@ public class IdxAuthRequestNodePlugin extends AbstractNodeAmPlugin {
 	}
 
     /** 
-     * Handle plugin installation. This method will only be called once, on first AM startup once the plugin
-     * is included in the classpath. The {@link #onStartup()} method will be called after this one.
-     * 
-     * No need to implement this unless your AuthNode has specific requirements on install.
-     */
-	@Override
-	public void onInstall() throws PluginException {
-		super.onInstall();
-	}
-
-    /** 
-     * Handle plugin startup. This method will be called every time AM starts, after {@link #onInstall()},
-     * {@link #onAmUpgrade(String, String)} and {@link #upgrade(String)} have been called (if relevant).
-     * 
-     * No need to implement this unless your AuthNode has specific requirements on startup.
-     *
-	 */
-	@Override
-	public void onStartup() throws PluginException {
-		super.onStartup();
-	}
-
-    /** 
      * This method will be called when the version returned by {@link #getPluginVersion()} is higher than the
      * version already installed. This method will be called before the {@link #onStartup()} method.
      * 
@@ -105,6 +81,11 @@ public class IdxAuthRequestNodePlugin extends AbstractNodeAmPlugin {
      */	
 	@Override
 	public void upgrade(String fromVersion) throws PluginException {
+		
+		//Force Upgrade of Nodes, requires changing currentVersion=
+		pluginTools.upgradeAuthNode(IdxCheckEnrollmentStatus.class);
+		pluginTools.upgradeAuthNode(IdxMobileAuthRequestNode.class);
+		pluginTools.upgradeAuthNode(IdxMobileValidateAuthRequestNode.class);
 		super.upgrade(fromVersion);
 	}
 

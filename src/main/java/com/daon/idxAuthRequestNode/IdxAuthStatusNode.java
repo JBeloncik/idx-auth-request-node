@@ -20,8 +20,6 @@ package com.daon.idxAuthRequestNode;
 import static com.daon.idxAuthRequestNode.IdxCommon.IDX_HREF_KEY;
 import static com.daon.idxAuthRequestNode.IdxCommon.getTenantRepoFactory;
 import static org.forgerock.openam.auth.node.api.Action.goTo;
-import static org.forgerock.openam.auth.node.api.SharedStateConstants.USERNAME;
-
 import com.daon.identityx.rest.model.pojo.AuthenticationRequest;
 import com.identityx.clientSDK.TenantRepoFactory;
 import com.identityx.clientSDK.exceptions.IdxRestException;
@@ -32,8 +30,6 @@ import javax.inject.Inject;
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.auth.node.api.*;
 import org.forgerock.util.i18n.PreferredLocales;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A node that checks user authentication status in IdentityX
@@ -47,7 +43,7 @@ public class IdxAuthStatusNode implements Node {
     private static final String FAILED = "Failed";
     private static final String EXPIRED = "Expired";
 
-    private final Logger logger = LoggerFactory.getLogger("amAuth");
+    private static LoggerWrapper logger = new LoggerWrapper();
 
     /**
      * Configuration for the node.
@@ -65,7 +61,7 @@ public class IdxAuthStatusNode implements Node {
 
     @Override
     public Action process(TreeContext context) throws NodeProcessException {
-        //String username = context.sharedState.get(SharedStateConstants.USERNAME).asString();
+
         String username = context.sharedState.get("IdxKeyUserName").asString();
         if (username == null) {
             String errorMessage = "Error: IdxKeyUserName not found in sharedState! Make sure " +
@@ -75,17 +71,20 @@ public class IdxAuthStatusNode implements Node {
         }
 
         TenantRepoFactory tenantRepoFactory = getTenantRepoFactory(context);
-        logger.debug("Connected to the IdentityX Server");
 
         //call API to check status. Return true, false or pending
         //get the authHref value from sharedState
         String authHref = context.sharedState.get(IDX_HREF_KEY).asString();
+        
         if (authHref == null) {
             logger.error("Error: href not found in SharedState!");
             throw new NodeProcessException("Unable to authenticate - HREF not found!");
         }
 
         String status = getAuthenticationRequestStatus(authHref, tenantRepoFactory);
+        
+        logger.debug("Connected to the IdentityX Server @ [{}]", IdxCommon.getServerName(authHref));
+        
         if(status.equalsIgnoreCase("COMPLETED_SUCCESSFUL")) {
             return goTo(SUCCESS).build();
         }

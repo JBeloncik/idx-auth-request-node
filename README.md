@@ -47,14 +47,79 @@ IdentityX Auth Request Initiator contains the following configurable parameters:
 IdentityX Mobile Auth Request contains the following configurable parameters:
 - **policyName** name of the authentication policy which should be used
 - **applicationId** name of the application which should be used
+- **transactionDescription** Description used in the IdentityX Authentication Request.
 
+IdentityX Mobile Auth Request Validate contains the following configurable parameters:
+- **expectedStatus** IdentityX Authentication Request status that is returned once saved to the system (COMPLETED_SUCCESSFULLY or PENDING)
+
+
+
+#### Out of Band Tree Example ####
 The image below shows an example authentication tree using IdentityX nodes in an out of band flow.
+
 ![ScreenShot](./images/example.png)
 
+#### UAF FIDO Tree Example ####
 The image below shows an example authentication tree using IdentityX nodes in a mobile flow.
+
 ![ScreenShot](./images/example_mobile.png)
 
+##### Component configuration #####
+<table width=80%" border="1px" cellpadding="2" cellspacing="2" style="border-collapse: collapse;">
+	<tr bgcolor="#D3D3D3"><th colspan="2" align="left">IdentityX Check Enrollment Status</th></tr>
+	<tr><td>Node Name</td><td>IdentityX Check Enrollment Status</td></tr>
+	<tr><td width="30%">JKS KeyStore file location</td><td>/app/tomcat/webapps/openam/WEB-INF/classes/IDX-nodes/key.wrapper.jks</td></tr>
+	<tr><td>credential.properties file location</td><td>/app/tomcat/webapps/openam/WEB-INF/classes/IDX-nodes/credential.properties</td></tr>
+	<tr><td>Key Store Password</td><td>password</td></tr>
+	<tr><td>Key Alias</td><td>idx-am-nodes-symmetric</td></tr>
+	<tr><td>Key Password</td><td>password</td></tr>
+	<tr><td>userIdAttribute</td><td></td></tr>
+	<tr bgcolor="#D3D3D3"><th colspan="2" align="left">IdentityX Mobile Auth Request</th></tr>
+	<tr><td>Node Name</td><td>IdentityX Mobile Auth Request</td></tr>
+	<tr><td>Policy Name</td><td>FidoAuthPolicy</td></tr>
+	<tr><td>Application ID</td><td>FidoApplication</td></tr>
+	<tr><td>Transaction Description</td><td>UAF FIDO Transaction</td></tr>
+	<tr bgcolor="#D3D3D3"><th colspan="2" align="left">IdentityX Mobile Auth Request Validate</th></tr>
+	<tr><td>Node Name</td><td>IdentityX Mobile Auth Request Validate</td></tr>
+	<tr><td>Expected AuthRequest Status</td><td>COMPLETED_SUCCESSFULLY</td></tr>	
+</table>
+
+#### ADOS Tree Example ####
+The image below shows an example authentication tree using IdentityX nodes in a Active Data on Server (ADoS) mobile flow.
+
+![ScreenShot](./images/example_ados_mobile.png)
+
+##### Component configuration #####
+<table width=80%" border="1px" cellpadding="2" cellspacing="2" style="border-collapse: collapse;">
+	<tr bgcolor="#D3D3D3"><th colspan="2" align="left">IdentityX Check Enrollment Status</th></tr>
+	<tr><td>Node Name</td><td>IdentityX Check Enrollment Status</td></tr>
+	<tr><td width="30%">JKS KeyStore file location</td><td>/app/tomcat/webapps/openam/WEB-INF/classes/IDX-nodes/key.wrapper.jks</td></tr>
+	<tr><td>credential.properties file location</td><td>/app/tomcat/webapps/openam/WEB-INF/classes/IDX-nodes/credential.properties</td></tr>
+	<tr><td>Key Store Password</td><td>password</td></tr>
+	<tr><td>Key Alias</td><td>idx-am-nodes-symmetric</td></tr>
+	<tr><td>Key Password</td><td>password</td></tr>
+	<tr><td>userIdAttribute</td><td></td></tr>
+	<tr bgcolor="#D3D3D3"><th colspan="2" align="left">IdentityX Mobile Auth Request</th></tr>
+	<tr><td>Node Name</td><td>IdentityX Mobile Auth Request</td></tr>
+	<tr><td>Policy Name</td><td>AdosAuthPolicy</td></tr>
+	<tr><td>Application ID</td><td>AdosApplication</td></tr>
+	<tr><td>Transaction Description</td><td>ADoS Transaction</td></tr>
+	<tr bgcolor="#D3D3D3"><th colspan="2" align="left">IdentityX Mobile Auth Request Validate</th></tr>
+	<tr><td>Node Name</td><td>IdentityX Mobile Auth Request Validate</td></tr>
+	<tr><td>Expected AuthRequest Status</td><td>PENDING</td></tr>
+	<tr bgcolor="#D3D3D3"><th colspan="2" align="left">IdentityX Mobile Auth Request</th></tr>
+	<tr><td>Node Name</td><td>IdentityX Mobile Auth Request</td></tr>
+	<tr><td>Policy Name</td><td>AdosAuthPolicy</td></tr>
+	<tr><td>Application ID</td><td>AdosApplication</td></tr>
+	<tr><td>Transaction Description</td><td>ADoS Transaction</td></tr>
+	<tr bgcolor="#D3D3D3"><th colspan="2" align="left">IdentityX Mobile Auth Request Validate</th></tr>
+	<tr><td>Node Name</td><td>IdentityX Mobile Auth Request Validate</td></tr>
+	<tr><td>Expected AuthRequest Status</td><td>COMPLETED_SUCCESSFULLY</td></tr>	
+</table>
+
+#### Enrollment with Out of Band Tree Tree Example ####
 The image below shows an example enrollment and authentication tree using IdentityX nodes in an out of band flow.
+
 ![ScreenShot](./images/sponsorship_example.png)
 
 ### Authenticating  ###

@@ -29,11 +29,7 @@ import org.forgerock.openam.auth.node.api.SharedStateConstants;
 import org.forgerock.openam.auth.node.api.TreeContext;
 import org.forgerock.openam.sm.annotations.adapters.Password;
 import org.forgerock.openam.utils.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.daon.identityx.rest.model.pojo.User;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.assistedinject.Assisted;
 import com.identityx.clientSDK.TenantRepoFactory;
 import com.sun.identity.sm.RequiredValueValidator;
@@ -108,7 +104,7 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
     }
 
     private final Config config;
-    private final Logger logger = LoggerFactory.getLogger("amAuth");
+    private static LoggerWrapper logger = new LoggerWrapper();
 
     @Inject
     public IdxCheckEnrollmentStatus(@Assisted Config config) {
@@ -140,16 +136,14 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
         String jksPassword = String.valueOf(config.jksPassword());
         String keyAlias = config.keyAlias();
         String keyPassword = String.valueOf(config.keyPassword());
+        
+        logger.debug("IdxCheckEnrollmentStatus::Configuration[PathToKeyStore={}, PathToCredentialProperties={}, KeyAlias={}]", keyStore, credentialProperties, keyAlias);
 
-        TenantRepoFactory tenantRepoFactory = IdxTenantRepoFactorySingleton.getInstance(keyStore, jksPassword,
-                                                                                        credentialProperties,
-                                                                                        keyAlias, keyPassword)
-                                                                                        .tenantRepoFactory;
+        TenantRepoFactory tenantRepoFactory = IdxTenantRepoFactorySingleton.getInstance(keyStore, jksPassword, credentialProperties, keyAlias, keyPassword).tenantRepoFactory;        
 
-        logger.debug("Connected to the IdentityX Server");
-
-        //set all config params in SharedState
+        //Set all config params in SharedState
         JsonValue newState = context.sharedState.copy();
+        
         newState.put("IdxPathToKeyStore", keyStore);
         newState.put("IdxPathToCredentialProperties", credentialProperties);
         newState.put("IdxJksPassword", jksPassword);
@@ -158,22 +152,21 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
         newState.put("IdxKeyUserName", username);
 
         User user = findUser(username, tenantRepoFactory);
+        
         if (user == null) {
-            logger.debug("User with ID " + username + " not found in IdentityX!");
+            logger.error("FATAL: UserID=[{}] not found in IdentityX", username);
             return goTo(false).replaceSharedState(newState).build();
         }
-
-        logger.debug("User found with ID " + username);
-        try {
-            newState.put("Daon_User", IdxCommon.objectMapper.writeValueAsString(user));
-        } catch (JsonProcessingException e) {
-            logger.error("Unable to write the user object as string");
-        }
-
+        
+        logger.debug("Connected to the IdentityX Server @ [{}]", IdxCommon.getServerName(user.getHref()));
+        logger.debug("User found with ID {}", username);
+        
+        newState.put(IdxCommon.IDX_USER_HREF_KEY, user.getHref());
+        newState.put(IdxCommon.IDX_USER_INTERNAL_ID_KEY, user.getId());
+		newState.put(IdxCommon.IDX_USER_ID_KEY, user.getUserId());
+		
+		logger.debug("Added to SharedState - User Id=[{}] UserId=[{}] Href=[{}]", user.getId(), user.getUserId(), user.getHref());
 
         return goTo(true).replaceSharedState(newState).build();
     }
-
-
-
 }
