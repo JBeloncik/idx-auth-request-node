@@ -45,7 +45,7 @@ import org.forgerock.openam.auth.node.api.*;
 /**
  * A node that initiates an authentication request to IdentityX
  */
-@Node.Metadata(outcomeProvider = SingleOutcomeNode.OutcomeProvider.class, configClass = IdxAuthRequestNode.Config.class)
+@Node.Metadata(outcomeProvider = SingleOutcomeNode.OutcomeProvider.class, configClass = IdxAuthRequestNode.Config.class, tags = {"mfa", "multi-factor authentication"})
 public class IdxAuthRequestNode extends SingleOutcomeNode {
 
 	/**

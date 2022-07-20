@@ -49,7 +49,7 @@ import javax.inject.Inject;
  *
  */
 @Node.Metadata(outcomeProvider  = AbstractDecisionNode.OutcomeProvider.class,
-        configClass      = IdxCheckEnrollmentStatus.Config.class)
+        configClass      = IdxCheckEnrollmentStatus.Config.class, tags = {"mfa", "multi-factor authentication"})
 public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
 
     /**
