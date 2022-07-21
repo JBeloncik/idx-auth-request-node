@@ -34,7 +34,7 @@ import javax.security.auth.callback.TextOutputCallback;
 /**
  * A node that initiates an authentication request to IdentityX
  */
-@Node.Metadata(outcomeProvider = SingleOutcomeNode.OutcomeProvider.class, configClass = IdxMobileAuthRequestNode.Config.class)
+@Node.Metadata(outcomeProvider = SingleOutcomeNode.OutcomeProvider.class, configClass = IdxMobileAuthRequestNode.Config.class, tags = {"mfa", "multi-factor authentication"})
 public class IdxMobileAuthRequestNode extends SingleOutcomeNode {
 
 	/**

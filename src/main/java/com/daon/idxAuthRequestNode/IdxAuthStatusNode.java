@@ -35,7 +35,7 @@ import org.forgerock.util.i18n.PreferredLocales;
  * A node that checks user authentication status in IdentityX
  */
 @Node.Metadata(outcomeProvider  = IdxAuthStatusNode.IdxAuthStatusOutcomeProvider.class,
-               configClass      = IdxAuthStatusNode.Config.class)
+               configClass      = IdxAuthStatusNode.Config.class, tags = {"mfa", "multi-factor authentication"})
 public class IdxAuthStatusNode implements Node {
 
     private static final String PENDING = "Pending";

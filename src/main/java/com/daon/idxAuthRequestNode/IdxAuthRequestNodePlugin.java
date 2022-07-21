@@ -56,7 +56,7 @@ import org.forgerock.openam.plugins.PluginException;
  */
 public class IdxAuthRequestNodePlugin extends AbstractNodeAmPlugin {
 
-	static String currentVersion = "1.3.0";
+	static String currentVersion = "1.4.0";
 	
     /** 
      * Specify the Map of list of node classes that the plugin is providing. These will then be installed and

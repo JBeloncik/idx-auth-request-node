@@ -25,7 +25,7 @@ import com.sun.identity.sm.RequiredValueValidator;
 /**
  * A node that validates an authentication request to IdentityX
  */
-@Node.Metadata(outcomeProvider = AbstractDecisionNode.OutcomeProvider.class, configClass = IdxMobileValidateAuthRequestNode.Config.class)
+@Node.Metadata(outcomeProvider = AbstractDecisionNode.OutcomeProvider.class, configClass = IdxMobileValidateAuthRequestNode.Config.class, tags = {"mfa", "multi-factor authentication"})
 public class IdxMobileValidateAuthRequestNode extends AbstractDecisionNode {
 
 	private static LoggerWrapper logger = new LoggerWrapper();

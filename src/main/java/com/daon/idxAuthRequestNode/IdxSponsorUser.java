@@ -41,7 +41,7 @@ import javax.inject.Inject;
 import javax.security.auth.callback.ConfirmationCallback;
 import javax.security.auth.callback.TextOutputCallback;
 
-@Node.Metadata(outcomeProvider = IdxSponsorOutcomeProvider.class, configClass = Config.class)
+@Node.Metadata(outcomeProvider = IdxSponsorOutcomeProvider.class, configClass = Config.class, tags = {"mfa", "multi-factor authentication"})
 public class IdxSponsorUser implements Node {
 
     /**
