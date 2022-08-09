@@ -68,39 +68,27 @@ class IdxCommon {
         TenantRepoFactory tenantRepoFactory;
 
         //Pull these config values from SharedState. These are in the IdxCheckEnrollmentStatus node
-        String pathToKeyStore = context.sharedState.get("IdxPathToKeyStore").asString();
-        if (pathToKeyStore == null) {
-            logger.error("Error: Path to JKS KeyStore not found in SharedState!");
-            throw new NodeProcessException("Path to JKS KeyStore not found!");
+        String tenantUrl = context.sharedState.get("IdxTenantUrl").asString();
+        if (tenantUrl == null) {
+            logger.error("Error: Tenant URL not found in SharedState!");
+            throw new NodeProcessException("Tenant URL not found!");
         }
 
-        String pathToCredentialProperties = context.sharedState.get("IdxPathToCredentialProperties").asString();
+        String user_name = context.sharedState.get("IdxUser").asString();
 
-        if (pathToCredentialProperties == null) {
-            logger.error("Error: Path to credential.properties file not found in SharedState!");
-            throw new NodeProcessException("Path to credential.properties file not found!");
+        if (user_name == null) {
+            logger.error("Error: Username not found in SharedState!");
+            throw new NodeProcessException("Username not found!");
         }
 
-        String jksPassword = context.sharedState.get("IdxJksPassword").asString();
-        if (jksPassword == null) {
-            logger.error("Error: JKS Password not found in SharedState!");
-            throw new NodeProcessException("JKS password not found in SharedState!");
+        String password = context.sharedState.get("IdxPassword").asString();
+        if (password == null) {
+            logger.error("Error: Password not found in SharedState!");
+            throw new NodeProcessException("Password not found in SharedState!");
         }
-
-        String keyAlias = context.sharedState.get("IdxKeyAlias").asString();
-        if (keyAlias == null) {
-            logger.error("Error: Key Alias not found in SharedState!");
-            throw new NodeProcessException("Key Alias not found in SharedState!");
-        }
-
-        String keyPassword = context.sharedState.get("IdxKeyPassword").asString();
         
-        if (keyPassword == null) {
-            logger.error("Error: Key Password not found in SharedState!");
-            throw new NodeProcessException("Key password not found in SharedState!");
-        }
 
-        tenantRepoFactory = IdxTenantRepoFactorySingleton.getInstance(pathToKeyStore, jksPassword, pathToCredentialProperties, keyAlias, keyPassword).tenantRepoFactory;
+        tenantRepoFactory = IdxTenantRepoFactorySingleton.getInstance(tenantUrl, user_name, password).tenantRepoFactory;
 
         if (tenantRepoFactory != null) {
             logger.debug("Successfully Initialised the TenantRepoFactory");

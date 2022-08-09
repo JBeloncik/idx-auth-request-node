@@ -4,6 +4,7 @@ import org.forgerock.openam.auth.node.api.NodeProcessException;
 
 import com.identityx.clientSDK.TenantRepoFactory;
 import com.identityx.clientSDK.credentialsProviders.EncryptedKeyPropFileCredentialsProvider;
+import com.identityx.clientSDK.credentialsProviders.ADCredentialsProvider;
 import com.identityx.clientSDK.def.ICredentialsProvider;
 import com.identityx.clientSDK.exceptions.ClientInitializationException;
 import com.identityx.clientSDK.exceptions.IdxRestException;
@@ -21,30 +22,18 @@ class IdxTenantRepoFactorySingleton {
 
     public TenantRepoFactory tenantRepoFactory = null;
 
-    private IdxTenantRepoFactorySingleton(String keyStorePath, String jksPassword, String credentialPropertiesPath, String keyAlias, String keyPass) throws NodeProcessException {
+    private IdxTenantRepoFactorySingleton(String tenantUrl, String username, String password) throws NodeProcessException {
         
     	logger.info("Entering IdxTenantRepoFactorySingleton");
         
-        logger.debug("JKS={}", keyStorePath);
-        logger.debug("Credential Proeprties={}", credentialPropertiesPath);
         
-        InputStream keyStoreStream = getFileStream(keyStorePath);
-		InputStream credentialStream = getFileStream(credentialPropertiesPath);
-        
-		if (keyStoreStream == null) {
-			throw new NodeProcessException(String.format("FATAL: cannot read Java-KeyStore file =[%s]", keyStorePath));
-		}
-		
-		if (credentialStream == null) {
-			throw new NodeProcessException(String.format("FATAL: cannot read Credential Properties file =[%s]", credentialPropertiesPath));
-		}
-		
 		ICredentialsProvider credentialProvider = null;
 		
 		try {
-			credentialProvider = new EncryptedKeyPropFileCredentialsProvider(keyStoreStream, jksPassword, credentialStream, keyAlias, keyPass);
+			credentialProvider = new ADCredentialsProvider(tenantUrl, username, password);
+
 			tenantRepoFactory = new TenantRepoFactory(credentialProvider);		
-		} catch(IdxRestException | ClientInitializationException ex) {
+		} catch(IdxRestException ex) {
 			logger.error("IdxTenantRepoFactorySingleton Exception", ex);
 			throw new NodeProcessException("FATAL: ", ex);
 		}
@@ -52,12 +41,12 @@ class IdxTenantRepoFactorySingleton {
         logger.info("Exiting IdxTenantRepoFactorySingleton");
     }
 
-    static IdxTenantRepoFactorySingleton getInstance(String keyStorePath, String jksPassword, String credentialPropertiesPath, String keyAlias, String keyPass) throws NodeProcessException {
+    static IdxTenantRepoFactorySingleton getInstance(String tenantUrl, String username, String password) throws NodeProcessException {
     	logger.info("Entering getInstance");
     	
         if(tenantRepoInstance == null) {
         	logger.debug("TenantRepoFactory is null, creating new instance");
-            tenantRepoInstance = new IdxTenantRepoFactorySingleton(keyStorePath, jksPassword, credentialPropertiesPath, keyAlias, keyPass);
+            tenantRepoInstance = new IdxTenantRepoFactorySingleton(tenantUrl, username, password);
         }
         
         logger.info("Exiting getInstance");
