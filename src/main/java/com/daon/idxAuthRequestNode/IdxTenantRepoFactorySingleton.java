@@ -32,7 +32,10 @@ class IdxTenantRepoFactorySingleton {
 		try {
 			credentialProvider = new ADCredentialsProvider(tenantUrl, username, password);
 
-			tenantRepoFactory = new TenantRepoFactory(credentialProvider);		
+			tenantRepoFactory = new TenantRepoFactory.TenantRepoFactoryBuilder()
+                                .setCredentialsProvider(credentialProvider)
+                                .setCreateBrowserSession(false)
+                                .build();
 		} catch(IdxRestException ex) {
 			logger.error("IdxTenantRepoFactorySingleton Exception", ex);
 			throw new NodeProcessException("FATAL: ", ex);
