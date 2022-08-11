@@ -62,14 +62,14 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
          * @return the path to the jks keyStore
          */
         @Attribute(order = 100, validators = {RequiredValueValidator.class})
-        String pathToKeyStore();
+        String tenantUrl();
 
         /**
          * the path to the credential.properties file
          * @return the path to the credential.properties file
          */
         @Attribute(order = 200, validators = {RequiredValueValidator.class})
-        String pathToCredentialProperties();
+        String username();
 
         /**
          * password for the jks keyStore
@@ -77,23 +77,9 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
          */
         @Attribute(order = 300, validators = {RequiredValueValidator.class})
         @Password
-        char[] jksPassword();
+        char[] password();
 
-        /**
-         * the key alias
-         * @return the key alias
-         */
-        @Attribute(order = 400, validators = {RequiredValueValidator.class})
-        String keyAlias();
-
-        /**
-         * password for the key
-         * @return the keyPassword
-         */
-        @Attribute(order = 500, validators = {RequiredValueValidator.class})
-        @Password
-        char[] keyPassword();
-
+       
         /**
          * the attribute in sharedState to use for IdentityX userId
          * @return the userIdAttribute
@@ -131,24 +117,19 @@ public class IdxCheckEnrollmentStatus extends AbstractDecisionNode {
 
         String username = usernameJson.asString();
 
-        String keyStore = config.pathToKeyStore();
-        String credentialProperties = config.pathToCredentialProperties();
-        String jksPassword = String.valueOf(config.jksPassword());
-        String keyAlias = config.keyAlias();
-        String keyPassword = String.valueOf(config.keyPassword());
+        String tenantUrl = config.tenantUrl();
+        String user_name = config.username();
+        String password = String.valueOf(config.password());
         
-        logger.debug("IdxCheckEnrollmentStatus::Configuration[PathToKeyStore={}, PathToCredentialProperties={}, KeyAlias={}]", keyStore, credentialProperties, keyAlias);
-
-        TenantRepoFactory tenantRepoFactory = IdxTenantRepoFactorySingleton.getInstance(keyStore, jksPassword, credentialProperties, keyAlias, keyPassword).tenantRepoFactory;        
+        
+        TenantRepoFactory tenantRepoFactory = IdxTenantRepoFactorySingleton.getInstance(tenantUrl, user_name, password).tenantRepoFactory;        
 
         //Set all config params in SharedState
         JsonValue newState = context.sharedState.copy();
         
-        newState.put("IdxPathToKeyStore", keyStore);
-        newState.put("IdxPathToCredentialProperties", credentialProperties);
-        newState.put("IdxJksPassword", jksPassword);
-        newState.put("IdxKeyAlias", keyAlias);
-        newState.put("IdxKeyPassword", keyPassword);
+        newState.put("IdxTenantUrl", tenantUrl);
+        newState.put("IdxUser", user_name);
+        newState.put("IdxPassword", password);
         newState.put("IdxKeyUserName", username);
 
         User user = findUser(username, tenantRepoFactory);
